@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
-import Home from "./components/LandingPage/Home";
+import Home from "./Home";
 import AddUser from "./components/AdminDashboard/AddUser";
 import AddDriver from "./components/AdminDashboard/AddDriver";
 import Fee from "./components/AdminDashboard/Fee";
