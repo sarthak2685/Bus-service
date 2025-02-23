@@ -48,9 +48,14 @@ const Hero = () => {
     handleModalClose();
   };
   return (
+    <>
     <div className="relative min-h-[80vh] bg-white flex flex-col md:flex-row items-center justify-center overflow-hidden px-8 mt-4">
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_var(--tw-gradient-stops))] from-orange-100 via-white to-orange-50 opacity-50"></div>
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/graphy.png')] opacity-20 z-0"></div>
+
+      <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-orange-200 rounded-full blur-3xl opacity-50 animate-blob z-0"></div>
+
+<div className="absolute top-[-80px] left-[-80px] w-72 h-72 bg-orange-200 rounded-full blur-3xl opacity-40 animate-blob z-0"></div>
 
       <div className="flex flex-col md:flex-row items-center w-full relative z-10">
         {/* Image Section */}
@@ -164,7 +169,17 @@ const Hero = () => {
           </div>
         </div>
       )}
+      <style jsx>{`
+        @keyframes blob {
+          0%, 100% { transform: scale(1) translate(0, 0); }
+          50% { transform: scale(1.1) translate(20px, -20px); }
+        }
+        .animate-blob {
+          animation: blob 7s infinite ease-in-out;
+        }
+      `}</style>
     </div>
+    </>
   );
 };
 
