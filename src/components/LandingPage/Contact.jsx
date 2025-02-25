@@ -7,14 +7,9 @@ const Contact = () => {
 
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/graphy.png')] opacity-20 z-0"></div>
-
-      {/* Animated Blob */}
-      <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-orange-200 rounded-full blur-3xl opacity-50 animate-blob z-0"></div>
-
-      <div className="absolute top-[-80px] left-[-80px] w-72 h-72 bg-orange-200 rounded-full blur-3xl opacity-40 animate-blob z-0"></div>
       <h1 className="text-4xl font-bold text-orange-500 mb-8 z-10">Contact Us</h1>
 
-      <div className="max-w-4xl w-full bg-gray-50 rounded-lg shadow-lg p-8 grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+      <div className="max-w-4xl w-full bg-gray-50 mt-16 rounded-lg shadow-lg p-8 grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
         {/* Contact Info */}
         <div>
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">Get in Touch</h2>
@@ -49,6 +44,12 @@ const Contact = () => {
             className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
             required
           />
+           <input
+            type="number"
+            placeholder="Your Number"
+            className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+            required
+          />
           <textarea
             placeholder="Your Message"
             className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 h-32"
@@ -63,16 +64,7 @@ const Contact = () => {
         </form>
       </div>
 
-      {/* Animations */}
-      <style jsx>{`
-        @keyframes blob {
-          0%, 100% { transform: scale(1) translate(0, 0); }
-          50% { transform: scale(1.1) translate(20px, -20px); }
-        }
-        .animate-blob {
-          animation: blob 7s infinite ease-in-out;
-        }
-      `}</style>
+
     </div>
   );
 };
