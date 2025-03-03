@@ -126,7 +126,7 @@ const Hero = () => {
               Empowering parents with transparency and ensuring students experience a stress-free commute.
             </motion.p>
 
-            <motion.div
+            {/* <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 2 }}
@@ -136,7 +136,7 @@ const Hero = () => {
 
                 Login
               </button>
-            </motion.div>
+            </motion.div> */}
           </div>
         </div>
         {isModalOpen && (
@@ -170,9 +170,9 @@ const Hero = () => {
 
               {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
 
-              <div className="flex justify-center">
-                <button onClick={handleLogin} className="bg-orange-500 text-white px-4 py-2 rounded">Login</button>
-              </div>
+              {/* <div className="flex justify-center">
+                <button onClick={handleLogin} className="bg-orange-500 w-[50%] text-white px-4 py-2 rounded">Login</button>
+              </div> */}
             </div>
           </div>
         )}

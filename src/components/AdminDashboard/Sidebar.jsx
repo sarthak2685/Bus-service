@@ -13,7 +13,9 @@ import "react-toastify/dist/ReactToastify.css";
 
 const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const handleLogout = () => {
-    window.location.href = "/login";
+    //remove localstorage value
+    localStorage.removeItem("user");
+    window.location.href = "/";
   };
 
   return (
