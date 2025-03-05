@@ -8,9 +8,34 @@ const Gallery = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [images, setImages] = useState([]);
   const [previewImage, setPreviewImage] = useState(null);
-  const [selectedImage, setSelectedImage] = useState(null); // Show selected file below input
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const toggleSidebar = () => setIsCollapsed((prev) => !prev);
+
+  // Fetch existing images when component mounts
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const response = await fetch(`${config.apiUrl}/gallery/`);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch images");
+        }
+
+        const data = await response.json();
+        setImages(data.images || []); // Assuming the API returns an object with an 'images' array
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching images:", err);
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchImages();
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -25,7 +50,7 @@ const Gallery = () => {
     const files = Array.from(event.target.files);
 
     if (files.length > 0) {
-      setSelectedImage(URL.createObjectURL(files[0])); // Show selected file preview
+      setSelectedImage(URL.createObjectURL(files[0]));
     }
 
     for (let file of files) {
@@ -41,7 +66,7 @@ const Gallery = () => {
         const data = await response.json();
 
         if (response.ok && data.image) {
-          setImages((prevImages) => [...prevImages, data.image]); // Add uploaded image to gallery
+          setImages((prevImages) => [...prevImages, data.image]);
         } else {
           console.error(
             "Error uploading image:",
@@ -54,13 +79,31 @@ const Gallery = () => {
     }
   };
 
-  const handleDeleteImage = (imageToDelete) => {
-    setImages(images.filter((image) => image !== imageToDelete));
-    if (previewImage === imageToDelete) {
-      setPreviewImage(null);
+  const handleDeleteImage = async (imageToDelete) => {
+    try {
+      const response = await fetch(`${config.apiUrl}/gallery/`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ image: imageToDelete }),
+      });
+
+      if (response.ok) {
+        setImages(images.filter((image) => image !== imageToDelete));
+        if (previewImage === imageToDelete) {
+          setPreviewImage(null);
+        }
+      } else {
+        const errorData = await response.json();
+        console.error("Error deleting image:", errorData.message);
+      }
+    } catch (error) {
+      console.error("Error deleting image:", error);
     }
   };
 
+  // Rendering logic with loading and error states
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <div className="flex flex-row flex-grow">
@@ -89,40 +132,52 @@ const Gallery = () => {
                 />
               </label>
 
-              {/* Show selected image below upload button
-              {selectedImage && (
-                <div className="mt-4 text-center">
-                  <p className="text-gray-700">Selected Image Preview:</p>
-                  <img
-                    src={selectedImage}
-                    alt="Selected"
-                    className="mt-2 max-w-xs mx-auto rounded-lg shadow-md"
-                  />
+              {/* Loading State */}
+              {loading && (
+                <div className="text-center text-gray-600 py-4">
+                  Loading images...
                 </div>
-              )} */}
+              )}
+
+              {/* Error State */}
+              {error && (
+                <div className="text-center text-red-600 py-4">
+                  Error: {error}
+                </div>
+              )}
 
               {/* Image Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6">
-                {images.map((src, index) => (
-                  <div
-                    key={index}
-                    className="relative overflow-hidden rounded-lg shadow-md cursor-pointer"
-                  >
-                    <img
-                      src={src}
-                      alt="Uploaded"
-                      className="w-full h-auto"
-                      onClick={() => setPreviewImage(src)}
-                    />
-                    <button
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
-                      onClick={() => handleDeleteImage(src)}
-                    >
-                      <XCircle size={24} />
-                    </button>
-                  </div>
-                ))}
-              </div>
+              {!loading && !error && (
+                <div>
+                  {images.length === 0 ? (
+                    <div className="text-center text-gray-600 py-4">
+                      No images uploaded yet
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6">
+                      {images.map((src, index) => (
+                        <div
+                          key={index}
+                          className="relative overflow-hidden rounded-lg shadow-md cursor-pointer"
+                        >
+                          <img
+                            src={src}
+                            alt="Uploaded"
+                            className="w-full h-auto"
+                            onClick={() => setPreviewImage(src)}
+                          />
+                          <button
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
+                            onClick={() => handleDeleteImage(src)}
+                          >
+                            <XCircle size={24} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
