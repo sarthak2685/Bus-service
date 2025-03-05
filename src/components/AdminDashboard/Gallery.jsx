@@ -25,7 +25,7 @@ const Gallery = () => {
         }
 
         const data = await response.json();
-        setImages(data.images || []); // Assuming the API returns an object with an 'images' array
+        setImages(data || []); // Directly use the returned array
         setLoading(false);
       } catch (err) {
         console.error("Error fetching images:", err);
@@ -65,8 +65,9 @@ const Gallery = () => {
 
         const data = await response.json();
 
-        if (response.ok && data.image) {
-          setImages((prevImages) => [...prevImages, data.image]);
+        if (response.ok && data.id) {
+          // Add the new image object to the images array
+          setImages((prevImages) => [...prevImages, data]);
         } else {
           console.error(
             "Error uploading image:",
@@ -86,12 +87,12 @@ const Gallery = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ image: imageToDelete }),
+        body: JSON.stringify({ id: imageToDelete.id }),
       });
 
       if (response.ok) {
-        setImages(images.filter((image) => image !== imageToDelete));
-        if (previewImage === imageToDelete) {
+        setImages(images.filter((image) => image.id !== imageToDelete.id));
+        if (previewImage === imageToDelete.image) {
           setPreviewImage(null);
         }
       } else {
@@ -155,20 +156,20 @@ const Gallery = () => {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6">
-                      {images.map((src, index) => (
+                      {images.map((imageData) => (
                         <div
-                          key={index}
-                          className="relative overflow-hidden rounded-lg shadow-md cursor-pointer"
+                          key={imageData.id}
+                          className="relative overflow-hidden rounded-lg shadow-md"
                         >
                           <img
-                            src={src}
+                            src={imageData.image}
                             alt="Uploaded"
-                            className="w-full h-auto"
-                            onClick={() => setPreviewImage(src)}
+                            className="w-full h-48 object-cover cursor-pointer"
+                            onClick={() => setPreviewImage(imageData.image)}
                           />
                           <button
                             className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
-                            onClick={() => handleDeleteImage(src)}
+                            onClick={() => handleDeleteImage(imageData)}
                           >
                             <XCircle size={24} />
                           </button>
