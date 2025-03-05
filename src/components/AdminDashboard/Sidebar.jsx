@@ -6,6 +6,8 @@ import {
   CurrencyDollarIcon,
   DocumentTextIcon,
   ArrowRightOnRectangleIcon,
+  MapIcon,
+  PhotoIcon,
 } from "@heroicons/react/24/solid";
 import { FaTimes } from "react-icons/fa";
 import { ToastContainer } from "react-toastify";
@@ -73,6 +75,42 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               }`}
             />
             <span>Drivers</span>
+          </NavLink>
+
+          <NavLink
+            to="/routes"
+            className={({ isActive }) =>
+              `flex items-center py-3 px-4 rounded-lg transition-all duration-300 ${
+                isActive
+                  ? "bg-[#FF6F00] text-black font-semibold shadow-md"
+                  : "text-white hover:bg-[#FFD166] hover:text-black"
+              }`
+            }
+          >
+            <MapIcon
+              className={`h-5 w-5 mr-2 ${
+                location.pathname === "/routes" ? "text-black" : "text-white"
+              }`}
+            />
+            <span>Routes</span>
+          </NavLink>
+
+          <NavLink
+            to="/gallery"
+            className={({ isActive }) =>
+              `flex items-center py-3 px-4 rounded-lg transition-all duration-300 ${
+                isActive
+                  ? "bg-[#FF6F00] text-black font-semibold shadow-md"
+                  : "text-white hover:bg-[#FFD166] hover:text-black"
+              }`
+            }
+          >
+            <PhotoIcon
+              className={`h-5 w-5 mr-2 ${
+                location.pathname === "/gallery" ? "text-black" : "text-white"
+              }`}
+            />
+            <span>Gallery</span>
           </NavLink>
 
           <NavLink
