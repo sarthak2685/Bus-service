@@ -76,7 +76,14 @@ const Navbar = () => {
       const data = await response.json();
       console.log("JSON response", data.success);
       if (data.status === true) {
-        alert("Login successful");
+        toast.success("Login successfully!", {
+          position: "top-right",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });        
         localStorage.setItem("user", JSON.stringify(data));
         console.log("token", data);
         closeModal();
@@ -86,7 +93,14 @@ const Navbar = () => {
           window.location.href = "/parent-dashboard";
         }
       } else {
-        alert("Invalid credentials");
+        toast.error("Invalid Credential!", {
+          position: "top-right",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });      
       }
     } catch (error) {
       console.error("Login error:", error);

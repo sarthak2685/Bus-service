@@ -1,16 +1,26 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import config from '../Config';
 
 const Gallery = () => {
-  const images = [
-    'https://img.freepik.com/premium-photo/cute-pupil-walking-school-bus_13339-103164.jpg',
-    'https://img.freepik.com/premium-photo/cute-pupil-walking-school-bus_13339-103164.jpg',
-    'https://img.freepik.com/premium-photo/indian-school-boy-standing-white-background_601128-2.jpg',
-    'https://img.freepik.com/free-photo/happy-mother-son-wearing-face-masks-while-commuting-school-by-bus_637285-11781.jpg',
-    'https://img.freepik.com/free-photo/portrait-young-boy-school-student_23-2151031884.jpg',
-    'https://img.freepik.com/free-photo/male-bus-driver-portrait_23-2151582526.jpg',
-    'https://img.freepik.com/free-photo/view-young-students-attending-school_23-2151031880.jpg',
-  ];
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const response = await fetch(`${config.apiUrl}/gallery/`);
+        const data = await response.json();
+        setImages(data);
+      } catch (error) {
+        console.error('Error fetching images:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchImages();
+  }, []);
 
   return (
     <div className="relative bg-white px-4 sm:px-6 lg:px-8 py-12 overflow-hidden">
@@ -21,11 +31,14 @@ const Gallery = () => {
         <h1 className="text-4xl font-bold text-orange-500">Gallery</h1>
       </div>
 
-      {/* Image Grid with Animations */}
-      <div className="mt-12 max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
+      {/* Loader */}
+      {loading ? (
+        <div className="text-center text-gray-500 mt-8">Loading images...</div>
+      ) : (
+        <div className="mt-12 max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
         {images.map((img, index) => (
           <motion.div
-            key={index}
+            key={img.id}
             className="relative group overflow-hidden rounded-lg shadow-lg"
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -33,7 +46,7 @@ const Gallery = () => {
             whileHover={{ scale: 1.05 }}
           >
             <img
-              src={img}
+              src={img.image}
               alt={`Gallery Image ${index + 1}`}
               className="w-full h-64 object-cover transition-transform duration-500 ease-in-out"
             />
@@ -43,7 +56,8 @@ const Gallery = () => {
             </div>
           </motion.div>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
