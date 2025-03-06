@@ -7,9 +7,13 @@ import Fee from "./components/AdminDashboard/Fee";
 import Invoice from "./components/AdminDashboard/Invoice";
 import DriverRoutes from "./components/AdminDashboard/Routes";
 import Gallery from "./components/AdminDashboard/Gallery";
+import { ToastContainer } from "react-toastify";
 
 function App() {
   return (
+    <>
+          <ToastContainer />
+
     <Router>
       {/* Set up Routes */}
       <Routes>
@@ -22,6 +26,7 @@ function App() {
         <Route path="/invoice" element={<Invoice />} />
       </Routes>
     </Router>
+    </>
   );
 }
 

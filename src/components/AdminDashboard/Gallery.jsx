@@ -3,6 +3,9 @@ import Sidebar from "./Sidebar";
 import Header from "./Header";
 import config from "../Config"; // Importing API config
 import { XCircle } from "lucide-react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 const Gallery = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -82,27 +85,51 @@ const Gallery = () => {
 
   const handleDeleteImage = async (imageToDelete) => {
     try {
-      const response = await fetch(`${config.apiUrl}/gallery/`, {
+      const response = await fetch(`${config.apiUrl}/gallery/${imageToDelete.id}/`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ id: imageToDelete.id }),
       });
-
+  
       if (response.ok) {
-        setImages(images.filter((image) => image.id !== imageToDelete.id));
+        setImages((prevImages) => prevImages.filter((image) => image.id !== imageToDelete.id));
         if (previewImage === imageToDelete.image) {
           setPreviewImage(null);
         }
+        toast.success("Image deleted successfully!", {
+          position: "top-right",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
       } else {
         const errorData = await response.json();
-        console.error("Error deleting image:", errorData.message);
+        toast.error(`Error deleting image: ${errorData.message}`, {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
       }
     } catch (error) {
+      toast.error("Error deleting image. Please try again.", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
       console.error("Error deleting image:", error);
     }
   };
+  
+  
 
   // Rendering logic with loading and error states
   return (
