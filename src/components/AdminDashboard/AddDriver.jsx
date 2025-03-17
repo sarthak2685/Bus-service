@@ -375,8 +375,12 @@ const AddDriver = () => {
                             {driver.name}
                           </td>
                           <td className="border border-gray-300 px-6 py-3">
-                            {driver.route.name}{" "}
-                            {/* Yahan route ka name dikhayega */}
+                            {driver.route.name}
+                            {driver.route.amount && (
+                              <span className="block text-sm text-gray-500">
+                                Amount: {driver.route.amount || "N/A"}
+                              </span>
+                            )}
                           </td>
                           <td className="border border-gray-300 px-6 py-3">
                             {driver.contact}
