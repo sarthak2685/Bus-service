@@ -13,6 +13,8 @@ import {
   FiChevronRight,
   FiTruck,
   FiTrash2,
+  FiClock,
+  FiDollarSign,
 } from "react-icons/fi";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
@@ -41,6 +43,7 @@ const AddUser = () => {
     phone_number: "",
     fathers_name: "",
     contact_number: "",
+    bus_arrival_time: "",
   });
   // Fetch user token from local storage
   const S = JSON.parse(localStorage.getItem("user"));
@@ -115,7 +118,10 @@ const AddUser = () => {
           class: student.student_class,
           section: student.student_section,
           phone: student.phone_number,
+          emergency: student.contact_number,
+          arrivalTime: student.bus_arrival_time,
           driverName: student.driver ? student.driver.name : "N/A",
+          amount: student.driver.route.amount,
           route:
             student.driver && student.driver.route
               ? student.driver.route.name
@@ -123,6 +129,8 @@ const AddUser = () => {
           driverContact: student.driver ? student.driver.contact : "N/A",
           vehicleNumber: student.driver ? student.driver.vehicle_number : "N/A",
         }));
+
+        // console.log(emergency);
 
         setStudents(transformedStudents);
         setDrivers(driversData);
@@ -139,6 +147,8 @@ const AddUser = () => {
     }
   }, [token]);
 
+  const [routeAmount, setRouteAmount] = useState("");
+
   const handleDriverChange = (event) => {
     const driverName = event.target.value;
     const driver = drivers.find((d) => d.name === driverName);
@@ -153,14 +163,18 @@ const AddUser = () => {
       );
       setSelectedRoute(assignedRoute ? assignedRoute.id : "");
 
+      // Set the route amount based on the assigned route
+      setRouteAmount(assignedRoute ? assignedRoute.amount : "");
+
       setSelectedVehicle(driver.vehicle_number || "");
 
-      // Send driver_id in the payload
+      // Send driver_id in the payload - add amount to payload
       const payload = {
         driver_id: driver.id,
         driver_name: driverName,
         contact: driver.contact || "",
         route_id: assignedRoute ? assignedRoute.id : "",
+        route_amount: assignedRoute ? assignedRoute.amount : "",
         vehicle_number: driver.vehicle_number || "",
       };
 
@@ -172,26 +186,9 @@ const AddUser = () => {
       setDriverContact("");
       setSelectedRoute("");
       setSelectedVehicle("");
+      setRouteAmount(""); // Reset amount field too
     }
   };
-
-  // // Render loading state
-  // if (loading) {
-  //   return (
-  //     <div className="bg-gray-100 p-6 rounded-xl shadow-md">
-  //       <p>Loading driver details...</p>
-  //     </div>
-  //   );
-  // }
-
-  // // Render error state
-  // if (error) {
-  //   return (
-  //     <div className="bg-red-100 p-6 rounded-xl shadow-md">
-  //       <p>Error: {error}</p>
-  //     </div>
-  //   );
-  // }
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -213,6 +210,7 @@ const AddUser = () => {
       selectedRoute,
       driverContact,
       selectedVehicle,
+      routeAmount,
     };
 
     try {
@@ -255,15 +253,17 @@ const AddUser = () => {
     setFormData({
       name: "",
       student_class: "",
-      section: "",
+      student_section: "",
       phone_number: "",
-      fatherName: "",
+      fathers_name: "",
       contact_number: "",
+      bus_arrival_time: "",
     });
     setSelectedDriver("");
     setSelectedRoute("");
     setDriverContact("");
     setSelectedVehicle("");
+    setRouteAmount("");
   };
 
   // // Loading and error handling
@@ -370,6 +370,13 @@ const AddUser = () => {
                         placeholder: "Enter Father's Name",
                         icon: <FiUser />,
                       },
+                      {
+                        name: "bus_arrival_time",
+                        label: "Arrival Time",
+                        placeholder: "HH:MM AM/PM",
+                        icon: <FiClock />,
+                        type: "time",
+                      },
                     ].map((field, index) => (
                       <div key={index}>
                         <label className="block text-gray-700 font-medium mb-2">
@@ -380,7 +387,7 @@ const AddUser = () => {
                             {field.icon}
                           </span>
                           <input
-                            type="text"
+                            type={field.type || "text"}
                             name={field.name}
                             value={formData[field.name]}
                             onChange={handleInputChange}
@@ -449,6 +456,25 @@ const AddUser = () => {
                             </option>
                           ))}
                         </select>
+                      </div>
+                    </div>
+
+                    {/* Amount Field - NEW */}
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-2">
+                        Amount
+                      </label>
+                      <div className="relative flex items-center border rounded-lg bg-white shadow-sm">
+                        <span className="absolute left-3 text-gray-500">
+                          <FiDollarSign />
+                        </span>
+                        <input
+                          type="text"
+                          className="w-full pl-10 pr-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                          value={routeAmount}
+                          readOnly
+                          placeholder="Amount will appear based on route"
+                        />
                       </div>
                     </div>
 
@@ -568,24 +594,24 @@ const AddUser = () => {
                         } hover:bg-[#FFF3E0]`}
                       >
                         <td
-                          className="border p-4 text-gray-700"
+                          className="border p-4 text-gray-700 text-center"
                           onClick={() => openModal(student)}
                         >
                           {student.name}
                         </td>
                         <td
-                          className="border p-4 text-gray-700"
+                          className="border p-4 text-gray-700 text-center"
                           onClick={() => openModal(student)}
                         >
                           {student.fatherName}
                         </td>
                         <td
-                          className="border p-4 text-gray-700"
+                          className="border p-4 text-gray-700 text-center"
                           onClick={() => openModal(student)}
                         >
                           {student.driverName}
                         </td>
-                        <td className="border p-4 text-gray-700">
+                        <td className="border p-4 text-gray-700 text-center">
                           <button
                             onClick={(e) => {
                               e.stopPropagation(); // Prevent modal from opening
@@ -685,6 +711,17 @@ const AddUser = () => {
                       <p>
                         <strong>Vehicle Number:</strong>{" "}
                         {selectedStudent.vehicleNumber}
+                      </p>
+                      <p>
+                        <strong>Emergency Contact:</strong>{" "}
+                        {selectedStudent.emergency}
+                      </p>
+                      <p>
+                        <strong>Arrival Time:</strong>{" "}
+                        {selectedStudent.arrivalTime}
+                      </p>
+                      <p>
+                        <strong>Amount:</strong> {selectedStudent.amount}
                       </p>
                     </div>
                   </div>
