@@ -125,6 +125,12 @@ const Terms = () => {
           </p>
           <p className="text-gray-700 mt-2">📱 Phone: +91 82105 84092</p>
         </div>
+
+        <footer className="mt-12 text-center">
+          <p className="text-gray-700">
+            Thank you for choosing Capital Bus Service 🚀
+          </p>
+        </footer>
       </div>
     </div>
   );
