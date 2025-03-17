@@ -1,12 +1,13 @@
-import React from 'react';
-import Bus from '../../assets/about.png'; // Replace with your image path
+import React from "react";
+import Bus from "../../assets/about.png"; // Replace with your image path
 
 const About = () => {
   return (
-    <div className="relative min-h-[80vh] bg-white flex flex-col md:flex-row items-center justify-center px-8 py-12 overflow-hidden">
-
+    <div
+      className="relative min-h-[80vh] bg-white flex flex-col md:flex-row items-center justify-center px-8 py-12 overflow-hidden"
+      id="about"
+    >
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/graphy.png')] opacity-20 z-0"></div>
-
 
       {/* Content */}
       <div className="relative w-full md:w-1/2 z-10">
@@ -23,7 +24,11 @@ const About = () => {
             Our Mission
           </h2>
           <p className="text-lg text-gray-700 leading-relaxed">
-            We are dedicated to providing a safe and reliable transportation service that ensures every student reaches school on time and returns home safely. With experienced drivers, real-time tracking, and a focus on security, we aim to give parents peace of mind every day.
+            We are dedicated to providing a safe and reliable transportation
+            service that ensures every student reaches school on time and
+            returns home safely. With experienced drivers, real-time tracking,
+            and a focus on security, we aim to give parents peace of mind every
+            day.
           </p>
         </div>
 
@@ -32,13 +37,13 @@ const About = () => {
             Why Choose Us?
           </h2>
           <p className="text-lg text-gray-700 leading-relaxed">
-            Our services go beyond just transportation. We focus on creating a positive journey experience for every child. With regular maintenance checks, trained staff, and constant communication, we set the gold standard for school transportation.
+            Our services go beyond just transportation. We focus on creating a
+            positive journey experience for every child. With regular
+            maintenance checks, trained staff, and constant communication, we
+            set the gold standard for school transportation.
           </p>
         </div>
-        
       </div>
-
-      
     </div>
   );
 };
