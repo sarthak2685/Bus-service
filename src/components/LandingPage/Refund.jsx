@@ -31,6 +31,16 @@ const Refund = () => {
 
           <hr className="mt-5" />
 
+                 <h3 className="text-xl font-semibold text-black mt-4 mb-2">
+            3. Refund
+          </h3>
+          <p className="text-gray-700 leading-7">
+            Clients may request a refund of the payment within 7 days of
+            making the payment if there is any problem from us.
+          </p>
+
+          <hr className="mt-5" />
+
           <h3 className="text-xl font-semibold text-black mt-4 mb-2">
             📞 Contact Information
           </h3>
