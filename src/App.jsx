@@ -14,11 +14,24 @@ import Contact from "./components/UserDashboard/Contact";
 import Privacy from "./components/LandingPage/Privacy";
 import Refund from "./components/LandingPage/Refund";
 import Terms from "./components/LandingPage/Terms";
+import Preloader from "./components/LandingPage/Preloader";
+import { useEffect, useState } from "react";
 
 function App() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 3000); // Preloader duration (3 seconds)
+    return () => clearTimeout(timer);
+  }, []);
   return (
     <>
       <ToastContainer />
+      {loading ? (
+        <Preloader />
+      ) : (
 
       <Router>
         {/* Set up Routes */}
@@ -38,6 +51,8 @@ function App() {
           <Route path="/terms" element={<Terms />} />
         </Routes>
       </Router>
+            )}
+
     </>
   );
 }

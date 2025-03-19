@@ -146,12 +146,12 @@ const Footer = () => {
         © {new Date().getFullYear()} SafeRide Bus Service. All Rights Reserved.
         |
         <a
-          href="https://webcraftix.com"
+          href="https://webcrafticx.com"
           target="_blank"
           rel="noreferrer"
           className="ml-2 cursor-pointer hover:text-orange-500"
         >
-          Designed by WebCraftiX
+          Designed by WebCrafticX
         </a>
       </div>
     </footer>
