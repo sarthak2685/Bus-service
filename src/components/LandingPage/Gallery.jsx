@@ -55,9 +55,6 @@ const Gallery = () => {
               />
               {/* Hover Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-70 transition-opacity duration-500 flex items-end p-4">
-                <p className="text-white text-lg font-semibold">
-                  Image {index + 1}
-                </p>
               </div>
             </motion.div>
           ))}

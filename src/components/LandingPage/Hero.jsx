@@ -1,14 +1,51 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
 import { MdClose } from 'react-icons/md';
-import Bus from "../../assets/school.png";
-
+import Bus from "../../assets/Buss.png";
+const headings = [
+  "Safe & Reliable School Bus Service",
+  "Your Child’s Safety, Our Priority",
+  "Punctual & Professional School Transport",
+];
 const Hero = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userType, setUserType] = useState('parent'); // Default set to parent
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
   const [password, setPassword] = useState('');
+
+  const [index, setIndex] = useState(0);
+
+  const [text, setText] = useState("");
+  const [isErasing, setIsErasing] = useState(false);
+
+  useEffect(() => {
+    let timeout;
+    
+    if (isErasing) {
+      // Erase text letter by letter
+      timeout = setTimeout(() => {
+        if (text.length > 0) {
+          setText((prev) => prev.slice(0, -1));
+        } else {
+          setIsErasing(false);
+          setIndex((prevIndex) => (prevIndex + 1) % headings.length);
+        }
+      }, 50);
+    } else {
+      // Type text letter by letter
+      timeout = setTimeout(() => {
+        if (text.length < headings[index].length) {
+          setText((prev) => headings[index].slice(0, prev.length + 1));
+        } else {
+          setTimeout(() => setIsErasing(true), 1000); // Pause before erasing
+        }
+      }, 100);
+    }
+
+    return () => clearTimeout(timeout);
+  }, [text, isErasing, index]);
+
 
   const handleLoginClick = () => {
     setIsModalOpen(true);
@@ -56,39 +93,47 @@ const Hero = () => {
 
 
         <div className="flex flex-col md:flex-row items-center w-full relative z-10">
-          <motion.div
-  initial={{ scale: 0, rotate: -45, opacity: 0 }}
-  animate={{ scale: 1, rotate: 0, opacity: 1 }}
-  transition={{ type: "spring", stiffness: 100, damping: 10 }}
-  whileHover={{ scale: 1.1, rotate: 3, boxShadow: "0px 0px 20px rgba(255,165,0,0.5)" }}
-  whileTap={{ scale: 0.95 }}
+        <motion.div
+  initial={{ opacity: 0, y: 10 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.5, ease: "easeOut" }}
+  whileHover={{ boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)" }}
   className="w-full md:w-1/2 mt-10 md:mt-0 cursor-pointer"
 >
   <motion.img
     src={Bus}
     alt="School Bus"
-    className="w-full object-contain drop-shadow-xl"
-    animate={{ y: [0, -5, 0] }}
+    className="w-full object-contain"
+    animate={{ y: [0, -2, 0] }}
     transition={{
-      duration: 2,
+      duration: 1.5,
       repeat: Infinity,
       repeatType: "reverse",
-      ease: "easeInOut"
+      ease: "easeInOut",
     }}
   />
 </motion.div>
 
 
+
+
           {/* Text Section */}
           <div className="w-full md:w-1/2 text-center md:text-left space-y-6">
-            <motion.h1
-              initial={{ y: -50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 1 }}
-              className="text-3xl md:text-5xl font-extrabold text-orange-600"
-            >
-              Safe & Reliable School Bus Service
-            </motion.h1>
+          <motion.h1
+      key={index}
+      className="text-3xl md:text-5xl font-extrabold text-orange-600"
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      {text}
+      <motion.span
+        className="ml-1 bg-orange-600 w-1 h-6 inline-block"
+        animate={{ opacity: [1, 0, 1] }}
+        transition={{ repeat: Infinity, duration: 0.5 }}
+      ></motion.span>
+    </motion.h1>
 
             <motion.p
               initial={{ y: 50, opacity: 0 }}

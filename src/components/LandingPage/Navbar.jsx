@@ -153,7 +153,7 @@ const Navbar = () => {
                   <a
                     href={`#${section}`}
                     onClick={() => setActiveSection(section)}
-                    className={`block py-2 px-6 md:px-4 transition duration-300 ${
+                    className={`block py-2 px-6 md:px-4 transition duration-300  rounded-full ${
                       activeSection === section
                         ? "bg-orange-500 text-white rounded-full border border-orange-500"
                         : "border-orange-500 text-orange-500"
@@ -224,7 +224,7 @@ const Navbar = () => {
             {userType && (
               <button
                 onClick={handleLogin}
-                className="w-full bg-blue-500 text-white py-2 rounded mb-3"
+                className="w-full bg-orange-400 hover:bg-orange-500 text-white py-2 rounded mb-3"
               >
                 Login
               </button>
