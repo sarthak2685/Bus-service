@@ -1,50 +1,49 @@
 import React from "react";
-import Bus from "../../assets/about.png"; // Replace with your image path
+import Bus from "../../assets/about.png"; // Replace with your custom image
 
 const About = () => {
   return (
-    <div
-      className="relative min-h-[80vh] bg-white flex flex-col md:flex-row items-center justify-center px-8 py-12 overflow-hidden"
+    <section
       id="about"
+      className="bg-gradient-to-br from-orange-50 via-white to-orange-100 py-20 px-6 md:px-12 lg:px-24"
     >
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/graphy.png')] opacity-20 z-0"></div>
 
-      {/* Content */}
-      <div className="relative w-full md:w-1/2 z-10">
-        <img
-          src={Bus}
-          alt="Bus"
-          className="w-full object-contain drop-shadow-xl rounded-lg"
-        />
-      </div>
-
-      <div className="flex flex-col md:flex-row items-center md:items-start w-full max-w-6xl relative z-10 mt-10 md:mt-0">
-        <div className="w-full md:w-1/2 md:order-2 mb-8 md:mb-0">
-          <h2 className="text-3xl md:text-4xl font-bold text-orange-500 mb-4">
-            Our Mission
-          </h2>
-          <p className="text-lg text-gray-700 leading-relaxed">
-            We are dedicated to providing a safe and reliable transportation
-            service that ensures every student reaches school on time and
-            returns home safely. With experienced drivers, real-time tracking,
-            and a focus on security, we aim to give parents peace of mind every
-            day.
-          </p>
+      <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+        {/* Image with cool effects */}
+        <div className="relative">
+          <div className="absolute top-[-20px] left-[-20px] w-full h-full rounded-3xl  blur-lg z-0" />
+          <img
+            src={Bus}
+            alt="About Us"
+            className="relative z-10 rounded-3xl hover:scale-105 transition duration-500 ease-in-out"
+          />
         </div>
 
-        <div className="w-full md:w-1/2 md:order-1">
-          <h2 className="text-3xl md:text-4xl font-bold text-orange-500 mb-4">
-            Why Choose Us?
-          </h2>
-          <p className="text-lg text-gray-700 leading-relaxed">
-            Our services go beyond just transportation. We focus on creating a
-            positive journey experience for every child. With regular
-            maintenance checks, trained staff, and constant communication, we
-            set the gold standard for school transportation.
-          </p>
+        {/* Text Section */}
+        <div className="space-y-10">
+          <div>
+            <h2 className="text-5xl font-extrabold text-orange-500 mb-4">
+              About Our Journey
+            </h2>
+            <p className="text-gray-700 text-lg leading-relaxed">
+              We’re not just a transport service — we’re a safe bridge between home and school. With GPS-enabled tracking, experienced drivers, and safety-first approach, we deliver trust with every trip.
+            </p>
+          </div>
+
+          <div className="bg-white shadow-xl rounded-2xl p-6 border-l-8 border-orange-500">
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">
+              Why Parents Trust Us
+            </h3>
+            <ul className="list-disc list-inside text-gray-700 space-y-1">
+              <li>Real-time tracking & instant updates</li>
+              <li>Friendly, trained staff & drivers</li>
+              <li>Strict safety & maintenance checks</li>
+              <li>On-time pickups and drop-offs, always</li>
+            </ul>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

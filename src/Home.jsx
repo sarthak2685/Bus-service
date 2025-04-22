@@ -5,6 +5,7 @@ import About from './components/LandingPage/About'
 import Gallery from './components/LandingPage/Gallery'
 import Contact from './components/LandingPage/Contact'
 import Footer from './components/LandingPage/Footer'
+import Features from './components/LandingPage/Features'
 
 function Home() {
   return (
@@ -12,6 +13,7 @@ function Home() {
     <Navbar />
     <Hero />
     <About />
+    <Features />
     <Gallery />
     <Contact />
     <Footer />
