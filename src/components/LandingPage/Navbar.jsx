@@ -11,7 +11,8 @@ const Navbar = () => {
   const [userType, setUserType] = useState(null); // 'admin' or 'parent'
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
-
+  const User = JSON.parse(localStorage.getItem("user"));
+  const UserDetail = User?.data;
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -24,21 +25,36 @@ const Navbar = () => {
   const handlePhoneNumberChange = async (e) => {
     const inputNumber = e.target.value;
     setPhoneNumber(inputNumber);
-
+  
     if (inputNumber.length === 10) {
       try {
         const response = await fetch(
           `${config.apiUrl}/check-user/?number=${inputNumber}`,
           {
-            // method: 'GET',
             headers: { "Content-Type": "application/json" },
           }
         );
         const data = await response.json();
-        // console.log("role",data.success)
+  
         if (data?.type) {
-          console.log("rolee", data.type);
           setUserType(data.type);
+          console.log("role", data.type);
+  
+          if (data.type === "parent") {
+            // Send OTP immediately
+            await fetch(`${config.apiUrl}/send-otp/`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ phone: Number(inputNumber),
+                phone_2: "91" + Number(inputNumber)  // Assuming you want to send OTP to the same number
+               }),
+            });
+            
+            toast.info("OTP sent to your number", {
+              position: "top-right",
+              autoClose: 2000,
+            });
+          }
         } else {
           setUserType(null);
           alert("Phone number not found.");
@@ -50,6 +66,7 @@ const Navbar = () => {
       setUserType(null); // Reset if the number is not 10 digits
     }
   };
+  
 
   const handleLoginClick = () => {
     setShowModal(true);
@@ -66,7 +83,7 @@ const Navbar = () => {
   const handleLogin = async () => {
     const payload = { mobileno: Number(phoneNumber) };
     if (userType === "admin") payload.password = password;
-    if (userType === "parent") payload.otp = otp;
+    if (userType === "parent") payload.password = otp;
 
     try {
       const response = await fetch(`${config.apiUrl}/login`, {
@@ -75,7 +92,7 @@ const Navbar = () => {
         body: JSON.stringify(payload),
       });
       const data = await response.json();
-      console.log("JSON response", data.success);
+      console.log("JSON response", data);
       if (data.status === true) {
         toast.success("Login successfully!", {
           position: "top-right",
@@ -86,12 +103,12 @@ const Navbar = () => {
           draggable: true,
         });
         localStorage.setItem("user", JSON.stringify(data));
-        console.log("token", data);
+        console.log("user", data.data);
         closeModal();
         if (data.data.type === "admin") {
           window.location.href = "/add-user";
-        } else if (data.data.type === "parent") {
-          window.location.href = "/parent-dashboard";
+        } else if (data.data.type === "student") {
+          window.location.href = "/UserDashboard";
         }
       } else {
         toast.error("Invalid Credential!", {
@@ -143,13 +160,13 @@ const Navbar = () => {
           </div>
 
           <div
-            className={`md:flex md:items-center md:space-x-8 absolute md:static top-16 left-0 w-full bg-white md:bg-transparent shadow-md md:shadow-none md:w-auto md:block transition-all duration-300 ${
+            className={`md:flex md:items-center md:space-x-8 absolute md:static top-16 left-52 w-[45%] bg-slate-50 md:bg-transparent shadow-md md:shadow-none md:w-auto md:block transition-all duration-300 ${
               isOpen ? "block" : "hidden"
             }`}
           >
-            <ul className="md:flex md:space-x-6 text-lg">
+            <ul className="md:flex md:space-x-6 text-sm md:text-lg flex flex-col md:flex-row justify-center items-center">
               {["home", "about", "gallery", "contact"].map((section) => (
-                <li key={section} className="text-center md:text-left">
+                <li key={section} className="text-center md:text-left w-24">
                   <a
                     href={`#${section}`}
                     onClick={() => setActiveSection(section)}
