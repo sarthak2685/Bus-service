@@ -1,6 +1,6 @@
 const config = {
     // apiUrl: 'https://buss.pythonanywhere.com/api',
-    apiUrl: 'http://api.capitalbusservice.in/api',
+    apiUrl: 'https://api.capitalbusservice.in/api',
     };
     
     export default config;
