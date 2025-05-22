@@ -30,7 +30,9 @@ const Invoice = () => {
   const componentRef = useRef(null);
   const S = JSON.parse(localStorage.getItem("user"));
   const token = S?.data?.token;
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [invoiceId, setInvoiceId] = useState(null);
+  
   useEffect(() => {
     fetch(`${config.apiUrl}/students/`, {
       method: "GET",
@@ -62,10 +64,13 @@ const Invoice = () => {
         busArrival: student.bus_arrival_time || "N/A",
       });
       setLateFees(0);
+
+      fetchLastPaidMonth(student.id, student.contact_number);
+
     }
   };
 
-
+console.log("Student Details:", studentDetails);
   // Auto-calculate months
   useEffect(() => {
     if (startMonth && endMonth) {
@@ -79,6 +84,35 @@ const Invoice = () => {
   }, [startMonth, endMonth]);
 
   const grandTotal = studentDetails.busFee * months + lateFees;
+
+  const fetchLastPaidMonth = async (studentId, mobile) => {
+    try {
+      const response = await fetch(
+        `${config.apiUrl}/get-invoice/?id=${studentId}&mobile_no=${mobile}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Token ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = await response.json();
+      console.log("Last Paid Month Data:", data);
+  
+      if (data?.next_date) {
+        const lastPaid = new Date(data.next_date); // e.g., "2024-01"
+        console.log("Last Paid Month:", lastPaid);
+        lastPaid.setMonth(lastPaid.getMonth() + 1);
+        const nextMonth = lastPaid.toISOString().slice(0, 7); // format "YYYY-MM"
+        setStartMonth(nextMonth);
+      }
+    } catch (error) {
+      console.error("Error fetching last paid month:", error);
+    }
+  };
+  
+
 
   const downloadInvoice = useReactToPrint({
     content: () => {
@@ -100,15 +134,101 @@ const Invoice = () => {
       return componentRef.current;
     },
   });
-  const shareViaWhatsApp = () => {
-    const message = `📜 *CAPITAL BUS SERVICE*\n *Invoice*\n------------------\n*👨‍🎓 *Student:* ${studentDetails.name}
-👪 *Parent:* ${studentDetails.fatherName}
-📞 *Mobile:* ${studentDetails.contact}\n🚌 *Route:* ${studentDetails.routeName}\n👷 *Driver:* ${studentDetails.driverName}\n📅 *Duration:* ${startMonth} to ${endMonth}\n💰 *Fees:* ₹${(studentDetails.busFee * months).toFixed(2)}
-\n⚠️ *Late Fees:* ₹${lateFees}\n💵 *Grand Total:* ₹${grandTotal.toFixed(2)}\n💳 *Payment Mode:* ${paymentMethod}\n *Thanks For Choosing Us!!*`;
 
+  // helpers to turn "YYYY-MM" into "YYYY-MM-DD"
+const formatStartDate = (ym) => `${ym}-01`;
+const formatEndDate = (ym) => {
+  const [year, month] = ym.split("-").map(Number);
+  // last day of month:
+  const lastDay = new Date(year, month, 0).getDate();
+  return `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+};
+
+  const handleGenerateInvoice = async () => {
+    if (!selectedStudent || !startMonth || !endMonth) {
+      alert("Please select a student and set month range.");
+      return;
+    }
+  
+    const payload = {
+      name: studentDetails.name,
+      father_name: studentDetails.fatherName,
+      mobile: studentDetails.contact,
+      route: studentDetails.routeName,
+      driver: studentDetails.driverName,
+      start_month: formatStartDate(startMonth),
+      end_month: formatEndDate(endMonth),
+      months,
+      late_fee: lateFees,
+      payment_method: paymentMethod,
+      grand_total: grandTotal.toFixed(2),
+      bus_fee: studentDetails.busFee,
+    };
+  
+    try {
+      // 1. POST Invoice Data
+      const postRes = await fetch(`${config.apiUrl}/invoices/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      const postData = await postRes.json();
+  
+      if (!postRes.ok) {
+        throw new Error(postData.message || "Failed to generate invoice.");
+      }
+  
+      const generatedInvoiceId = postData.invoice_id; 
+      setInvoiceId(generatedInvoiceId);
+  
+      // 2. GET PDF for Download
+      const pdfRes = await fetch(`${config.apiUrl}/invoices/?d=${generatedInvoiceId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Token ${token}`,
+        },
+      });
+  
+      const blob = await pdfRes.blob();
+      const url = window.URL.createObjectURL(blob);
+  
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Invoice_${generatedInvoiceId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  
+      // 3. Show WhatsApp Modal
+      setIsModalOpen(true);
+  
+    } catch (error) {
+      console.error("Invoice generation failed:", error);
+      alert("Failed to generate invoice. Please try again.");
+    }
+  };
+  
+  const handleWhatsAppShare = () => {
+    const message = `📜 *CAPITAL BUS SERVICE*\n*Invoice*\n------------------\n👨‍🎓 *Student:* ${studentDetails.name}
+  👪 *Parent:* ${studentDetails.fatherName}
+  📞 *Mobile:* ${studentDetails.contact}
+  🚌 *Route:* ${studentDetails.routeName}
+  👷 *Driver:* ${studentDetails.driverName}
+  📅 *Duration:* ${startMonth} to ${endMonth}
+  💰 *Fees:* ₹${(studentDetails.busFee * months).toFixed(2)}
+  ⚠️ *Late Fees:* ₹${lateFees}
+  💵 *Grand Total:* ₹${grandTotal.toFixed(2)}
+  💳 *Payment Mode:* ${paymentMethod}
+  *Thanks For Choosing Us!!*`;
+  
     const whatsappURL = `https://wa.me/+91${studentDetails.contact}?text=${encodeURIComponent(message)}`;
     window.open(whatsappURL, "_blank");
   };
+  
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -147,7 +267,7 @@ const Invoice = () => {
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <div>
                   <label className="block text-gray-700 font-medium">Start Month</label>
-                  <input type="month" value={startMonth} onChange={(e) => setStartMonth(e.target.value)} className="border p-2 rounded w-full" />
+                  <input type="month" value={startMonth} readOnly onChange={(e) => setStartMonth(e.target.value)} className="border p-2 rounded w-full" />
                 </div>
                 <div>
                   <label className="block text-gray-700 font-medium">End Month</label>
@@ -161,7 +281,7 @@ const Invoice = () => {
 
               <div className="mb-4 flex items-center gap-6">
                 {/* Late Fees */}
-                <div className="w-32">
+                {/* <div className="w-32">
                   <label className="block text-gray-700 font-medium mb-1">Late Fees</label>
                   <input
                     type="number"
@@ -169,7 +289,7 @@ const Invoice = () => {
                     onChange={(e) => setLateFees(Number(e.target.value))}
                     className="border p-2 rounded w-full"
                   />
-                </div>
+                </div> */}
 
                 {/* Payment Method */}
                 <div className="w-48">
@@ -214,14 +334,32 @@ const Invoice = () => {
             </div>
 
             {/* Buttons */}
-            <div className="flex gap-4 mt-6">
-              <button onClick={handleDownload} className="bg-orange-100 text-black px-6 py-3 rounded-lg flex items-center gap-2 hover:scale-105 transition-all duration-300 shadow-md"
-              ><FaDownload />
- Download PDF</button>
-              <button onClick={shareViaWhatsApp} className="bg-orange-100 text-black px-6 py-3 rounded-lg flex items-center gap-2 hover:scale-105 transition-all duration-300 shadow-md"
-              > <FiSend />Whatsapp</button>
-            </div>
+            <div className="flex gap-4 mt-6 items-center justify-center">
+  <button
+    onClick={handleGenerateInvoice}
+    className="bg-orange-100 text-black  px-4 py-2 font-semibold rounded hover:bg-orange-300 flex items-center gap-2"
+  >
+    <FiSend/>
+    Generate Invoice
+  </button>
+</div>
+
           </div>
+          {isModalOpen && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+      <h3 className="text-lg font-bold mb-4">Invoice Generated</h3>
+      <p className="mb-6">You can now share the invoice via WhatsApp.</p>
+      <button
+        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+        onClick={handleWhatsAppShare}
+      >
+        Share on WhatsApp
+      </button>
+    </div>
+  </div>
+)}
+
         </div>
       </div>
     </div>
