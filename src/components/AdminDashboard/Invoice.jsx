@@ -7,6 +7,8 @@ import {
   FiSend,
 } from "react-icons/fi";
 import config from "../Config";
+import { jsPDF } from "jspdf";
+
 
 const Invoice = () => {
   const [students, setStudents] = useState([]);
@@ -176,36 +178,122 @@ const formatEndDate = (ym) => {
         body: JSON.stringify(payload),
       });
   
-      const postData = await postRes.json();
+      const data = await postRes.json();
   
       if (!postRes.ok) {
         throw new Error(postData.message || "Failed to generate invoice.");
       }
   
-      const generatedInvoiceId = postData.invoice_id; 
-      setInvoiceId(generatedInvoiceId);
   
-      // 2. GET PDF for Download
-      const pdfRes = await fetch(`${config.apiUrl}/invoices/?d=${generatedInvoiceId}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Token ${token}`,
-        },
-      });
+      // ✅ Create PDF
+      const doc = new jsPDF();
   
-      const blob = await pdfRes.blob();
-      const url = window.URL.createObjectURL(blob);
+      // HEADER
+      const lineSpacing = 10;
+      let y = 15;
+    
+      // Company Header
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.text("CAPITAL BUS SERVICE", 105, y, { align: "center" });
+      y += 7;
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text("123 Main Street, City Name, State - 000000", 105, y, { align: "center" });
+      y += 5;
+      doc.text("Phone: +91 9876543210 | Email: info@capitalbus.com", 105, y, { align: "center" });
+    
+      // Separation Line
+      y += 7;
+      doc.line(15, y, 195, y);
+      y += 10;
+    
+      // Student & Invoice Details (2 Column Style)
+      doc.setFont("helvetica", "bold");
+      doc.text("Student Name:", 15, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(data.name, 55, y);
+    
+      doc.setFont("helvetica", "bold");
+      doc.text("Father's Name:", 110, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(data.father_name, 150, y);
+      y += lineSpacing;
+    
+      doc.setFont("helvetica", "bold");
+      doc.text("Mobile Number:", 15, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(data.mobile, 55, y);
+    
+      doc.setFont("helvetica", "bold");
+      doc.text("Payment Method:", 110, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(data.payment_method, 150, y);
+      y += lineSpacing;
+    
+      doc.setFont("helvetica", "bold");
+      doc.text("Start Date:", 15, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(data.start_month, 55, y);
+    
+      doc.setFont("helvetica", "bold");
+      doc.text("End Date:", 110, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(data.end_month, 150, y);
+      y += 12;
+      doc.line(15, y, 195, y);
+      y += 8;
+      // Table Header
+      doc.text("Description", 20, y + 7);
+      doc.text("Rate", 95, y + 7);
+      doc.text("Months", 130, y + 7);
+      doc.text("Total", 165, y + 7);
+      doc.setLineWidth(0.1); // Thin line
+doc.setDrawColor(150); // Light gray color
+doc.setLineDash([1, 1], 0); // Dotted line: [dashLength, gapLength]
+doc.line(15, y + 10, 195, y + 10); // From x=15 to x=195 at y+10
+
+      
+      y += 15;
+      
+      // Table Data
+      const fee = parseFloat(data.bus_fee);
+      const months = parseInt(data.months);
+      const total = fee * months;
+      
+      // Set font for table content
+      doc.setFont("helvetica", "normal");
+      
+      // Values - use .toFixed(2) and convert to string safely
+      doc.text("Bus Fee", 20, y);
+      doc.text(fee.toFixed(2).toString(), 95, y, { align: 'left' });
+      doc.text(months.toString(), 135, y, { align: 'center' });
+      doc.text(total.toFixed(2).toString(), 165, y, { align: 'left' });
+    
+      doc.setLineDash([]); // Reset to solid line
+
+      y += 15;
+    
+      // Grand Total
+      doc.setFont("helvetica", "bold");
+      doc.text("Grand Total:", 135, y);
+      doc.text(total.toFixed(2).toString(), 165, y,);
+      y += 15;
+    
+      // Separation Line
+      doc.line(15, y, 195, y);
+      y += 8;
+    
+      // Footer
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "italic");
+      doc.text("This bill is computer generated and does not require signature.", 105, y, { align: "center" });
+    
+      // Save PDF
+      doc.save(`Invoice_${data.name}_${data.start_month}.pdf`);
   
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Invoice_${generatedInvoiceId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-  
-      // 3. Show WhatsApp Modal
+      setInvoiceId(data.id);
       setIsModalOpen(true);
-  
     } catch (error) {
       console.error("Invoice generation failed:", error);
       alert("Failed to generate invoice. Please try again.");
@@ -346,12 +434,22 @@ const formatEndDate = (ym) => {
 
           </div>
           {isModalOpen && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+  <div className="fixed inset-0 bg-black bg-opacity-50  flex items-center justify-center z-50">
+    <div className="relative bg-white p-6 rounded-lg ml-40 shadow-lg max-w-sm w-full text-center">
+      
+      {/* Close Button */}
+      <button
+        onClick={() => setIsModalOpen(false)}
+        className="absolute top-2 right-2 text-gray-500 hover:text-black text-xl font-bold"
+      >
+        &times;
+      </button>
+
       <h3 className="text-lg font-bold mb-4">Invoice Generated</h3>
       <p className="mb-6">You can now share the invoice via WhatsApp.</p>
+      
       <button
-        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+        className="bg-orange-100 text-black font-semibold px-4 py-2 rounded hover:bg-orange-300"
         onClick={handleWhatsAppShare}
       >
         Share on WhatsApp
@@ -359,6 +457,7 @@ const formatEndDate = (ym) => {
     </div>
   </div>
 )}
+
 
         </div>
       </div>
