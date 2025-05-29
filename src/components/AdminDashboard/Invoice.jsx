@@ -103,9 +103,9 @@ console.log("Student Details:", studentDetails);
       console.log("Last Paid Month Data:", data);
   
       if (data?.next_date) {
-        const lastPaid = new Date(data.next_date); // e.g., "2024-01"
+        const lastPaid = new Date(data.next_date); 
         console.log("Last Paid Month:", lastPaid);
-        lastPaid.setMonth(lastPaid.getMonth() + 1);
+        lastPaid.setMonth(lastPaid.getMonth());
         const nextMonth = lastPaid.toISOString().slice(0, 7); // format "YYYY-MM"
         setStartMonth(nextMonth);
       }
