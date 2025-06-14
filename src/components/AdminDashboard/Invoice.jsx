@@ -78,7 +78,7 @@ console.log("Student Details:", studentDetails);
     if (startMonth && endMonth) {
       const start = new Date(startMonth);
       const end = new Date(endMonth);
-      let diffMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+      let diffMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())+1;
 
       // Ensure minimum value is 1
       setMonths(diffMonths > 0 ? diffMonths : 1);
