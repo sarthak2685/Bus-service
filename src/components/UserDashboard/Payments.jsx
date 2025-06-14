@@ -12,6 +12,9 @@ import {
 } from "react-icons/md";
 import config from "../Config";
 
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
 const Payments = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -19,14 +22,13 @@ const Payments = () => {
     const [lastPaymentDate, setLastPaymentDate] = useState("");
     const [nextDueDate, setNextDueDate] = useState("");
     const [isCollapsed, setIsCollapsed] = useState(false);
-
     const [paymentHistory, setPaymentHistory] = useState(null);
 
-    const monthNames = Array.from({ length: 12 }, (_, i) =>
-        new Date(0, i).toLocaleString("default", { month: "long" })
-    );
-
     const token = JSON.parse(localStorage.getItem("user"))?.data?.token;
+
+    const [fromDate, setFromDate] = useState(new Date());
+    const [toDate, setToDate] = useState(new Date());
+    const [totalMonths, setTotalMonths] = useState(1);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -35,32 +37,44 @@ const Payments = () => {
         phone: "",
         fatherName: "",
         route: "",
-        fromMonth: "",
-        toMonth: "",
         amount: 0,
     });
+
+    const calculateMonthDiff = (start, end) => {
+        const months =
+            (end.getFullYear() - start.getFullYear()) * 12 +
+            (end.getMonth() - start.getMonth()) +
+            1;
+        return months > 0 ? months : 1;
+    };
+
+    const calculateAmount = (start, end, fee) => {
+        const months = calculateMonthDiff(start, end);
+        return fee * months;
+    };
 
     useEffect(() => {
         const storedUser = JSON.parse(localStorage.getItem("user"));
         const user = storedUser?.data?.user_data;
-        const fee = parseInt(user?.driver?.route?.amount) || 0;
-        const endMonthStr = user?.end_month;
-        let fromMonth;
 
-        if (endMonthStr) {
-            const parsed = new Date(`${endMonthStr}T00:00:00`);
-            fromMonth = !isNaN(parsed)
-                ? parsed.getMonth() + 1
-                : new Date().getMonth() + 1;
-        } else {
-            fromMonth = new Date().getMonth() + 1;
+        const fee = parseInt(user?.driver?.route?.amount) || 0;
+        let initialFromDate = new Date();
+        initialFromDate.setDate(1); // start of month
+
+        if (user?.end_month) {
+            const parsedEnd = new Date(`${user.end_month}T00:00:00`);
+            if (!isNaN(parsedEnd)) {
+                parsedEnd.setMonth(parsedEnd.getMonth() + 1);
+                parsedEnd.setDate(1);
+                initialFromDate = parsedEnd;
+            }
         }
 
-        console.log("Parsed fromMonth from end_month:", fromMonth);
-
-        const totalAmount = calculateAmount(fromMonth, fromMonth, fee);
-
+        setFromDate(initialFromDate);
+        setToDate(initialFromDate); // default To same as From
+        setTotalMonths(1);
         setMonthlyFee(fee);
+
         setFormData((prev) => ({
             ...prev,
             name: user?.name || "",
@@ -69,9 +83,7 @@ const Payments = () => {
             phone: user?.phone_number || "",
             fatherName: user?.fathers_name || "",
             route: user?.driver?.route?.name || "",
-            fromMonth,
-            toMonth: fromMonth,
-            amount: totalAmount,
+            amount: calculateAmount(initialFromDate, initialFromDate, fee),
         }));
     }, []);
 
@@ -98,20 +110,56 @@ const Payments = () => {
                 const result = await response.json();
                 const student = result?.data?.[0];
 
-                let fromMonth = new Date().getMonth() + 1;
-
                 if (result.end_month) {
-                    const parsed = new Date(`${result.end_month}T00:00:00`);
-                    if (!isNaN(parsed)) {
-                        let calculatedMonth = parsed.getMonth() + 2; // +2 because getMonth is 0-indexed, and we want next month
-                        if (calculatedMonth > 12) calculatedMonth = 1; // wrap around to Jan
-                        fromMonth = calculatedMonth;
-                    }
+                    const end = new Date(`${result.end_month}T00:00:00`);
+                    const formattedEnd = end.toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                    });
+                    setNextDueDate(formattedEnd);
+                }
+
+                if (result.start_month && result.grand_total) {
+                    const start = new Date(`${result.start_month}T00:00:00`);
+                    const end = new Date(`${result.end_month}T00:00:00`);
+
+                    const formattedStart = start.toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                    });
+
+                    const startMonth = start.toLocaleString("en-IN", {
+                        month: "short",
+                    });
+                    const endMonth = end.toLocaleString("en-IN", {
+                        month: "short",
+                    });
+
+                    const startYear = start.getFullYear();
+                    const endYear = end.getFullYear();
+
+                    const monthRange =
+                        startYear === endYear
+                            ? `${startMonth} - ${endMonth} ${startYear}`
+                            : `${startMonth} ${startYear} - ${endMonth} ${endYear}`;
+
+                    setPaymentHistory({
+                        date: formattedStart,
+                        amount: result.grand_total,
+                        range: monthRange,
+                    });
+
+                    setLastPaymentDate(
+                        `${formattedStart} (₹ ${result.grand_total})`
+                    );
                 }
 
                 const busFee = parseInt(result.bus_fee) || 0;
 
                 if (student) {
+                    setMonthlyFee(busFee);
                     setFormData((prev) => ({
                         ...prev,
                         name: student.name || "",
@@ -120,63 +168,8 @@ const Payments = () => {
                         phone: student.phone_number || "",
                         fatherName: student.fathers_name || "",
                         route: student?.driver?.route?.name || "",
-                        fromMonth,
-                        toMonth: fromMonth,
-                        amount: calculateAmount(fromMonth, fromMonth, busFee),
+                        amount: calculateAmount(fromDate, toDate, busFee),
                     }));
-
-                    setMonthlyFee(busFee);
-
-                    if (result.start_month && result.grand_total) {
-                        const start = new Date(
-                            `${result.start_month}T00:00:00`
-                        );
-                        const formattedStart = start.toLocaleDateString(
-                            "en-IN",
-                            {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                            }
-                        );
-
-                        setLastPaymentDate(
-                            `${formattedStart} (₹ ${result.grand_total})`
-                        );
-
-                        const end = new Date(`${result.end_month}T00:00:00`);
-                        const startMonth = start.toLocaleString("en-IN", {
-                            month: "short",
-                        });
-                        const endMonth = end.toLocaleString("en-IN", {
-                            month: "short",
-                        });
-
-                        const startYear = start.getFullYear();
-                        const endYear = end.getFullYear();
-
-                        const monthRange =
-                            startYear === endYear
-                                ? `${startMonth} - ${endMonth} ${startYear}`
-                                : `${startMonth} ${startYear} - ${endMonth} ${endYear}`;
-
-                        setPaymentHistory({
-                            date: formattedStart,
-                            amount: result.grand_total,
-                            range: monthRange,
-                        });
-                    }
-
-                    if (result.end_month) {
-                        const formattedEnd = new Date(
-                            `${result.end_month}T00:00:00`
-                        ).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                        });
-                        setNextDueDate(formattedEnd);
-                    }
                 }
             } catch (err) {
                 console.error("Error fetching invoice:", err);
@@ -186,34 +179,24 @@ const Payments = () => {
         fetchInvoice();
     }, []);
 
-    const calculateAmount = (fromMonth, toMonth, feePerMonth) => {
-        const numberOfMonths =
-            toMonth >= fromMonth
-                ? toMonth - fromMonth + 1
-                : 12 - fromMonth + toMonth + 1;
-        return feePerMonth * numberOfMonths;
-    };
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        const newValue = parseInt(value, 10);
-
-        setFormData((prevData) => {
-            const newFrom =
-                name === "fromMonth" ? newValue : prevData.fromMonth;
-            const newTo = name === "toMonth" ? newValue : prevData.toMonth;
-
-            return {
-                ...prevData,
-                [name]: newValue,
-                amount: calculateAmount(newFrom, newTo, monthlyFee),
-            };
-        });
+    const handleToDateChange = (date) => {
+        const monthDiff = calculateMonthDiff(fromDate, date);
+        setToDate(date);
+        setTotalMonths(monthDiff);
+        setFormData((prev) => ({
+            ...prev,
+            amount: calculateAmount(fromDate, date, monthlyFee),
+        }));
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log("Invoice Data Submitted:", formData);
+        console.log("Invoice Data Submitted:", {
+            ...formData,
+            fromDate,
+            toDate,
+            totalMonths,
+        });
         setIsModalOpen(false);
     };
 
@@ -251,6 +234,7 @@ const Payments = () => {
                         </button>
                     </div>
 
+                    {/* Payment Summary */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
                         <div className="bg-white p-4 md:p-6 shadow-md rounded-lg flex items-center gap-4 border border-gray-200">
                             <MdPayment className="text-blue-500 text-3xl md:text-4xl" />
@@ -270,13 +254,13 @@ const Payments = () => {
                                     Next Due
                                 </p>
                                 <p className="text-xl md:text-2xl font-bold text-red-600">
-                                    {nextDueDate ? `${nextDueDate}` : "N/A"}
+                                    {nextDueDate || "N/A"}
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    {/* History Table Placeholder */}
+                    {/* History Table */}
                     <div className="bg-white p-4 md:p-6 shadow-md rounded-lg">
                         <div className="flex items-center gap-2 mb-4">
                             <MdHistory className="text-[#FF6F00] text-2xl md:text-3xl" />
@@ -364,8 +348,6 @@ const Payments = () => {
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {Object.entries(formData).map(([key, value]) =>
-                                    key !== "fromMonth" &&
-                                    key !== "toMonth" &&
                                     key !== "amount" ? (
                                         <div key={key} className="space-y-1">
                                             <label className="block text-gray-700 capitalize font-medium text-sm">
@@ -388,44 +370,39 @@ const Payments = () => {
                             </h3>
                             <div className="space-y-4">
                                 <label className="block text-gray-700 capitalize font-medium text-sm">
-                                    Payment month:
+                                    Payment period:
                                 </label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
-                                    <div className="flex items-center gap-4">
-                                        <label className="block text-gray-600 text-sm mb-2">
+                                    <div className="flex flex-col gap-1">
+                                        <label className="block text-gray-600 text-sm">
                                             From
                                         </label>
-                                        <select
-                                            name="fromMonth"
-                                            value={formData.fromMonth}
-                                            onChange={handleChange}
-                                            className="w-full p-1 border rounded-lg bg-gray-50"
-                                        >
-                                            {monthNames.map((month, i) => (
-                                                <option key={i} value={i + 1}>
-                                                    {month}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        <DatePicker
+                                            selected={fromDate}
+                                            onChange={() => {}}
+                                            dateFormat="MMMM yyyy"
+                                            showMonthYearPicker
+                                            className="w-full p-2 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                                            disabled
+                                        />
                                     </div>
-                                    <div className="flex items-center gap-4">
-                                        <label className="block text-gray-600 text-sm mb-2">
+                                    <div className="flex flex-col gap-1">
+                                        <label className="block text-gray-600 text-sm">
                                             To
                                         </label>
-                                        <select
-                                            name="toMonth"
-                                            value={formData.toMonth}
-                                            onChange={handleChange}
-                                            className="w-full p-1 border rounded-lg bg-gray-50"
-                                        >
-                                            {monthNames.map((month, i) => (
-                                                <option key={i} value={i + 1}>
-                                                    {month}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        <DatePicker
+                                            selected={toDate}
+                                            onChange={handleToDateChange}
+                                            dateFormat="MMMM yyyy"
+                                            showMonthYearPicker
+                                            minDate={fromDate}
+                                            className="w-full p-2 border rounded-lg bg-gray-50"
+                                        />
                                     </div>
                                 </div>
+                                <p className="text-sm text-gray-500">
+                                    Total Months: <strong>{totalMonths}</strong>
+                                </p>
                                 <p className="text-gray-900 font-semibold text-lg">
                                     Total Amount: ₹{formData.amount}
                                 </p>
