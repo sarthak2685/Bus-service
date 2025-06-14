@@ -9,15 +9,13 @@ import {
     MdNotificationsActive,
 } from "react-icons/md";
 import { AiOutlineCheck, AiOutlineClose } from "react-icons/ai";
+import config from "../Config";
 
 const DashboardHome = () => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     const userData = storedUser?.data?.user_data || {};
-    console.log("xyz", storedUser);
-    console.log("abc", storedUser?.user_data);
-    console.log("123", storedUser?.user_data?.name);
-
-    const token = storedUser?.token;
+    const S = JSON.parse(localStorage.getItem("user"));
+    const token = S?.data?.token;
 
     const [userInfo, setUserInfo] = useState({
         childName: userData.name || "N/A",
@@ -36,9 +34,9 @@ const DashboardHome = () => {
     });
 
     const [busInfo] = useState({
-        arrivalTime: userData.bus_arrival_time ?? "Not Available", // Handles null properly
+        arrivalTime: userData.bus_arrival_time ?? "N/A",
         busNumber: userData.driver?.vehicle_number || "N/A",
-        pickupLocation: userData.driver?.route?.name || "N/A", // Use route name instead
+        pickupLocation: userData.driver?.route?.name || "N/A",
         pickupDescription: userData.driver?.route?.description || "N/A",
     });
 
@@ -46,6 +44,9 @@ const DashboardHome = () => {
     const [tempEmergencyContact, setTempEmergencyContact] = useState(
         userInfo.emergencyContact
     );
+    const [sosMessage, setSosMessage] = useState("");
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const handleEmergencyChange = (e) => {
         setTempEmergencyContact(e.target.value);
@@ -55,8 +56,6 @@ const DashboardHome = () => {
         setUserInfo({ ...userInfo, emergencyContact: tempEmergencyContact });
         setIsEditing(false);
     };
-
-    const [isCollapsed, setIsCollapsed] = useState(false);
 
     const toggleSidebar = () => setIsCollapsed((prev) => !prev);
 
@@ -69,17 +68,47 @@ const DashboardHome = () => {
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    const [showConfirm, setShowConfirm] = useState(false);
-
     const handleEmergencyClick = () => {
         setShowConfirm(true);
     };
 
+    const sendWhatsAppMessage = (phoneNumber, message) => {
+        const whatsappLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
+            message
+        )}`;
+        window.open(whatsappLink, "_blank");
+    };
+
     const confirmEmergency = () => {
         setShowConfirm(false);
-        alert("🚨 Emergency alert sent to school authorities!");
-        // Add backend API call here
+
+        // Admin phone number (you may need to get this from your config or backend)
+        const adminPhone = "+918981516960"; // Replace with actual admin number
+        const driverPhone = `+91${driverInfo.driverContact}`;
+
+        const emergencyMessage = `🚨 EMERGENCY ALERT 🚨
+        
+Student: ${userInfo.childName}
+Class: ${userInfo.class}-${userInfo.section}
+Father: ${userInfo.fatherName}
+Contact: ${userInfo.phone}
+
+${sosMessage || "Emergency alert triggered!"}
+
+Current Location: ${busInfo.pickupLocation} (${busInfo.pickupDescription})`;
+
+        // Send to admin
+        sendWhatsAppMessage(adminPhone, emergencyMessage);
+
+        // Send to driver if contact exists
+        if (driverInfo.driverContact && driverInfo.driverContact !== "N/A") {
+            sendWhatsAppMessage(driverPhone, emergencyMessage);
+        }
+
+        alert("Emergency alert sent via WhatsApp to admin and driver!");
+        setSosMessage("");
     };
+
     return (
         <>
             <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
@@ -112,15 +141,25 @@ const DashboardHome = () => {
                                     🚨 Confirm Emergency Alert
                                 </h2>
                                 <p className="text-gray-600">
-                                    Are you sure you want to send an emergency
-                                    alert?
+                                    This will send WhatsApp messages to school
+                                    admin and driver.
                                 </p>
+                                <textarea
+                                    placeholder="Describe the emergency situation..."
+                                    className="w-full mt-4 p-2 border border-gray-300 rounded-md resize-none"
+                                    rows={4}
+                                    value={sosMessage}
+                                    onChange={(e) =>
+                                        setSosMessage(e.target.value)
+                                    }
+                                />
+
                                 <div className="mt-4 flex justify-center gap-4">
                                     <button
                                         className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700"
                                         onClick={confirmEmergency}
                                     >
-                                        Yes, Send Alert
+                                        Send Emergency Alert
                                     </button>
                                     <button
                                         className="px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400"
