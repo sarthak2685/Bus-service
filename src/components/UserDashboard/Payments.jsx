@@ -19,6 +19,9 @@ const Payments = () => {
     const [lastPaymentDate, setLastPaymentDate] = useState("");
     const [nextDueDate, setNextDueDate] = useState("");
     const [isCollapsed, setIsCollapsed] = useState(false);
+
+    const [paymentHistory, setPaymentHistory] = useState(null);
+
     const monthNames = Array.from({ length: 12 }, (_, i) =>
         new Date(0, i).toLocaleString("default", { month: "long" })
     );
@@ -52,6 +55,8 @@ const Payments = () => {
         } else {
             fromMonth = new Date().getMonth() + 1;
         }
+
+        console.log("Parsed fromMonth from end_month:", fromMonth);
 
         const totalAmount = calculateAmount(fromMonth, fromMonth, fee);
 
@@ -92,18 +97,74 @@ const Payments = () => {
 
                 const result = await response.json();
                 const student = result?.data?.[0];
+
+                let fromMonth = new Date().getMonth() + 1;
+
+                if (result.end_month) {
+                    const parsed = new Date(`${result.end_month}T00:00:00`);
+                    if (!isNaN(parsed)) {
+                        let calculatedMonth = parsed.getMonth() + 2; // +2 because getMonth is 0-indexed, and we want next month
+                        if (calculatedMonth > 12) calculatedMonth = 1; // wrap around to Jan
+                        fromMonth = calculatedMonth;
+                    }
+                }
+
+                const busFee = parseInt(result.bus_fee) || 0;
+
                 if (student) {
+                    setFormData((prev) => ({
+                        ...prev,
+                        name: student.name || "",
+                        class: student.student_class || "",
+                        section: student.student_section || "",
+                        phone: student.phone_number || "",
+                        fatherName: student.fathers_name || "",
+                        route: student?.driver?.route?.name || "",
+                        fromMonth,
+                        toMonth: fromMonth,
+                        amount: calculateAmount(fromMonth, fromMonth, busFee),
+                    }));
+
+                    setMonthlyFee(busFee);
+
                     if (result.start_month && result.grand_total) {
-                        const formattedStart = new Date(
+                        const start = new Date(
                             `${result.start_month}T00:00:00`
-                        ).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                        });
+                        );
+                        const formattedStart = start.toLocaleDateString(
+                            "en-IN",
+                            {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                            }
+                        );
+
                         setLastPaymentDate(
                             `${formattedStart} (₹ ${result.grand_total})`
                         );
+
+                        const end = new Date(`${result.end_month}T00:00:00`);
+                        const startMonth = start.toLocaleString("en-IN", {
+                            month: "short",
+                        });
+                        const endMonth = end.toLocaleString("en-IN", {
+                            month: "short",
+                        });
+
+                        const startYear = start.getFullYear();
+                        const endYear = end.getFullYear();
+
+                        const monthRange =
+                            startYear === endYear
+                                ? `${startMonth} - ${endMonth} ${startYear}`
+                                : `${startMonth} ${startYear} - ${endMonth} ${endYear}`;
+
+                        setPaymentHistory({
+                            date: formattedStart,
+                            amount: result.grand_total,
+                            range: monthRange,
+                        });
                     }
 
                     if (result.end_month) {
@@ -116,10 +177,6 @@ const Payments = () => {
                         });
                         setNextDueDate(formattedEnd);
                     }
-
-                    // console.log("Fetched student info:", student);
-                    // console.log("start_month raw:", student.start_month);
-                    // console.log("end_month raw:", student.end_month);
                 }
             } catch (err) {
                 console.error("Error fetching invoice:", err);
@@ -249,27 +306,38 @@ const Payments = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="border border-[#FFF3E0] bg-gray-50">
-                                    <tr className="border border-[#FFF3E0]">
-                                        <td className="p-2 md:p-3">
-                                            {lastPaymentDate || "N/A"}
-                                        </td>
-                                        <td className="p-2 md:p-3 text-green-700 font-medium">
-                                            ₹{monthlyFee}
-                                        </td>
-                                        <td className="p-2 md:p-3 text-green-700 font-medium">
-                                            n/a
-                                        </td>
-                                        <td className="p-2 md:p-3 text-green-600 flex items-center gap-1">
-                                            <MdCheckCircle className="text-green-600" />{" "}
-                                            Paid
-                                        </td>
-                                        <td className="p-2 md:p-3">
-                                            <button className="flex items-center gap-1 text-blue-700 hover:text-blue-900">
-                                                <MdFileDownload className="text-xl" />{" "}
-                                                Download
-                                            </button>
-                                        </td>
-                                    </tr>
+                                    {paymentHistory ? (
+                                        <tr className="border border-[#FFF3E0]">
+                                            <td className="p-2 md:p-3">
+                                                {paymentHistory.date}
+                                            </td>
+                                            <td className="p-2 md:p-3 text-green-700 font-medium">
+                                                ₹{paymentHistory.amount}
+                                            </td>
+                                            <td className="p-2 md:p-3 text-green-700 font-medium">
+                                                {paymentHistory.range}
+                                            </td>
+                                            <td className="p-2 md:p-3 text-green-600 flex items-center gap-1">
+                                                <MdCheckCircle className="text-green-600" />{" "}
+                                                Paid
+                                            </td>
+                                            <td className="p-2 md:p-3">
+                                                <button className="flex items-center gap-1 text-blue-700 hover:text-blue-900">
+                                                    <MdFileDownload className="text-xl" />{" "}
+                                                    Download
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        <tr>
+                                            <td
+                                                colSpan="5"
+                                                className="text-center py-4 text-gray-500"
+                                            >
+                                                No payment history found
+                                            </td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
