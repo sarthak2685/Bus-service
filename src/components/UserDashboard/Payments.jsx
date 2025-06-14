@@ -10,48 +10,148 @@ import {
     MdCurrencyRupee,
     MdClose,
 } from "react-icons/md";
+import config from "../Config";
 
 const Payments = () => {
-    const currentMonth = new Date().getMonth() + 1; // Get current month (1-12)
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [monthlyFee, setMonthlyFee] = useState(0);
+    const [lastPaymentDate, setLastPaymentDate] = useState("");
+    const [nextDueDate, setNextDueDate] = useState("");
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    const monthNames = Array.from({ length: 12 }, (_, i) =>
+        new Date(0, i).toLocaleString("default", { month: "long" })
+    );
+
+    const token = JSON.parse(localStorage.getItem("user"))?.data?.token;
 
     const [formData, setFormData] = useState({
-        name: "John Doe",
-        class: "5",
-        section: "A",
-        phone: "9876543210",
-        fatherName: "Michael Doe",
-        route: "Downtown to School",
-        fromMonth: currentMonth,
-        toMonth: currentMonth,
-        amount: 2000,
-        email: "john.doe@example.com",
+        name: "",
+        class: "",
+        section: "",
+        phone: "",
+        fatherName: "",
+        route: "",
+        fromMonth: "",
+        toMonth: "",
+        amount: 0,
     });
 
-    const calculateAmount = (fromMonth, toMonth) => {
-        const monthlyFee = 2000;
+    useEffect(() => {
+        const storedUser = JSON.parse(localStorage.getItem("user"));
+        const user = storedUser?.data?.user_data;
+        const fee = parseInt(user?.driver?.route?.amount) || 0;
+        const endMonthStr = user?.end_month;
+        let fromMonth;
+
+        if (endMonthStr) {
+            const parsed = new Date(`${endMonthStr}T00:00:00`);
+            fromMonth = !isNaN(parsed)
+                ? parsed.getMonth() + 1
+                : new Date().getMonth() + 1;
+        } else {
+            fromMonth = new Date().getMonth() + 1;
+        }
+
+        const totalAmount = calculateAmount(fromMonth, fromMonth, fee);
+
+        setMonthlyFee(fee);
+        setFormData((prev) => ({
+            ...prev,
+            name: user?.name || "",
+            class: user?.student_class || "",
+            section: user?.student_section || "",
+            phone: user?.phone_number || "",
+            fatherName: user?.fathers_name || "",
+            route: user?.driver?.route?.name || "",
+            fromMonth,
+            toMonth: fromMonth,
+            amount: totalAmount,
+        }));
+    }, []);
+
+    useEffect(() => {
+        const fetchInvoice = async () => {
+            try {
+                const storedUser = JSON.parse(localStorage.getItem("user"));
+                const user = storedUser?.data?.user_data;
+                const id = user?.id;
+                const mobile_no = user?.phone_number;
+
+                if (!id || !mobile_no) return;
+
+                const response = await fetch(
+                    `${config.apiUrl}/get-invoice/?id=${id}&mobile_no=${mobile_no}`,
+                    {
+                        headers: {
+                            Authorization: `Token ${token}`,
+                            "Content-Type": "application/json",
+                        },
+                    }
+                );
+
+                const result = await response.json();
+                const student = result?.data?.[0];
+                if (student) {
+                    if (result.start_month && result.grand_total) {
+                        const formattedStart = new Date(
+                            `${result.start_month}T00:00:00`
+                        ).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                        });
+                        setLastPaymentDate(
+                            `${formattedStart} (₹ ${result.grand_total})`
+                        );
+                    }
+
+                    if (result.end_month) {
+                        const formattedEnd = new Date(
+                            `${result.end_month}T00:00:00`
+                        ).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                        });
+                        setNextDueDate(formattedEnd);
+                    }
+
+                    // console.log("Fetched student info:", student);
+                    // console.log("start_month raw:", student.start_month);
+                    // console.log("end_month raw:", student.end_month);
+                }
+            } catch (err) {
+                console.error("Error fetching invoice:", err);
+            }
+        };
+
+        fetchInvoice();
+    }, []);
+
+    const calculateAmount = (fromMonth, toMonth, feePerMonth) => {
         const numberOfMonths =
             toMonth >= fromMonth
                 ? toMonth - fromMonth + 1
-                : 12 - fromMonth + toMonth + 1; // Handles year wrapping
-        return monthlyFee * numberOfMonths;
+                : 12 - fromMonth + toMonth + 1;
+        return feePerMonth * numberOfMonths;
     };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         const newValue = parseInt(value, 10);
-        setFormData((prevData) => ({
-            ...prevData,
-            [name]: newValue,
-            amount:
-                name === "fromMonth" || name === "toMonth"
-                    ? calculateAmount(
-                          name === "fromMonth" ? newValue : prevData.fromMonth,
-                          name === "toMonth" ? newValue : prevData.toMonth
-                      )
-                    : prevData.amount,
-        }));
+
+        setFormData((prevData) => {
+            const newFrom =
+                name === "fromMonth" ? newValue : prevData.fromMonth;
+            const newTo = name === "toMonth" ? newValue : prevData.toMonth;
+
+            return {
+                ...prevData,
+                [name]: newValue,
+                amount: calculateAmount(newFrom, newTo, monthlyFee),
+            };
+        });
     };
 
     const handleSubmit = (e) => {
@@ -59,12 +159,6 @@ const Payments = () => {
         console.log("Invoice Data Submitted:", formData);
         setIsModalOpen(false);
     };
-
-    const monthNames = Array.from({ length: 12 }, (_, i) =>
-        new Date(0, i).toLocaleString("default", { month: "long" })
-    );
-
-    const [isCollapsed, setIsCollapsed] = useState(false);
 
     const toggleSidebar = () => setIsCollapsed((prev) => !prev);
 
@@ -87,21 +181,19 @@ const Payments = () => {
             >
                 <UserHeader toggleSidebar={toggleSidebar} />
                 <div className="p-4 md:p-8 w-full bg-gray-100 min-h-screen">
-                    {/** Payment Header **/}
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl md:text-3xl font-semibold text-gray-900">
                             Payments & Fee Details
                         </h2>
                         <button
-                            className="px-4 py-2 bg-[#FF6F00] text-black  font-semibold flex item center justify-between  w-fit rounded-full shadow-md hover:bg-[#FFD166] hover:text-black transition-all duration-300"
+                            className="px-4 py-2 bg-[#FF6F00] text-black font-semibold flex items-center justify-between w-fit rounded-full shadow-md hover:bg-[#FFD166] hover:text-black transition-all duration-300"
                             onClick={() => setIsModalOpen(true)}
                         >
-                            <MdPayment className="text-xl  my-0.5" />
+                            <MdPayment className="text-xl my-0.5" />
                             Pay Now
                         </button>
                     </div>
 
-                    {/** Payment Summary Section **/}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
                         <div className="bg-white p-4 md:p-6 shadow-md rounded-lg flex items-center gap-4 border border-gray-200">
                             <MdPayment className="text-blue-500 text-3xl md:text-4xl" />
@@ -110,7 +202,7 @@ const Payments = () => {
                                     Last Payment
                                 </p>
                                 <p className="text-xl md:text-2xl font-bold text-blue-600">
-                                    ₹2000 (Paid)
+                                    {lastPaymentDate || "N/A"}
                                 </p>
                             </div>
                         </div>
@@ -121,14 +213,14 @@ const Payments = () => {
                                     Next Due
                                 </p>
                                 <p className="text-xl md:text-2xl font-bold text-red-600">
-                                    ₹2000 (Due on 15th Feb)
+                                    {nextDueDate ? `${nextDueDate}` : "N/A"}
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    {/** Payment History **/}
-                    <div className="bg-white p-4 md:p-6 shadow-md rounded-lg ">
+                    {/* History Table Placeholder */}
+                    <div className="bg-white p-4 md:p-6 shadow-md rounded-lg">
                         <div className="flex items-center gap-2 mb-4">
                             <MdHistory className="text-[#FF6F00] text-2xl md:text-3xl" />
                             <h3 className="text-xl md:text-2xl font-semibold text-gray-900">
@@ -140,10 +232,13 @@ const Payments = () => {
                                 <thead className="bg-[#FFF3E0] text-black">
                                     <tr>
                                         <th className="border p-2 md:p-3 text-left">
-                                            Date
+                                            Payment Date
                                         </th>
                                         <th className="border p-2 md:p-3 text-left">
                                             Amount
+                                        </th>
+                                        <th className="border p-2 md:p-3 text-left">
+                                            Month Paid
                                         </th>
                                         <th className="border p-2 md:p-3 text-left">
                                             Status
@@ -156,10 +251,13 @@ const Payments = () => {
                                 <tbody className="border border-[#FFF3E0] bg-gray-50">
                                     <tr className="border border-[#FFF3E0]">
                                         <td className="p-2 md:p-3">
-                                            15th Jan 2024
+                                            {lastPaymentDate || "N/A"}
                                         </td>
                                         <td className="p-2 md:p-3 text-green-700 font-medium">
-                                            ₹2000
+                                            ₹{monthlyFee}
+                                        </td>
+                                        <td className="p-2 md:p-3 text-green-700 font-medium">
+                                            n/a
                                         </td>
                                         <td className="p-2 md:p-3 text-green-600 flex items-center gap-1">
                                             <MdCheckCircle className="text-green-600" />{" "}
@@ -179,15 +277,14 @@ const Payments = () => {
                 </div>
             </div>
 
-            {/** Payment Modal **/}
+            {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm transition-opacity duration-300">
-                    <div className="bg-white p-4 md:p-6 rounded-lg shadow-2xl min-w-screen md:w-[100vh]  max-h-[80vh] border border-gray-200 transform transition-transform duration-300 scale-100 overflow-y-auto">
+                    <div className="bg-white p-4 md:p-6 rounded-lg shadow-2xl md:w-[100vh] max-h-[80vh] border border-gray-200 transform scale-100 overflow-y-auto">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold text-gray-900">
                                 Payment Details
                             </h2>
-
                             <MdClose
                                 className="text-[#FF6F00] text-2xl font-bold cursor-pointer hover:text-[#FFD166] transition-colors duration-200"
                                 onClick={() => setIsModalOpen(false)}
@@ -217,6 +314,7 @@ const Payments = () => {
                                     ) : null
                                 )}
                             </div>
+
                             <h3 className="text-lg font-semibold text-gray-800">
                                 Account Details
                             </h3>
@@ -225,7 +323,7 @@ const Payments = () => {
                                     Payment month:
                                 </label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
-                                    <div className="flex col-span-1 items-center gap-4">
+                                    <div className="flex items-center gap-4">
                                         <label className="block text-gray-600 text-sm mb-2">
                                             From
                                         </label>
@@ -233,7 +331,6 @@ const Payments = () => {
                                             name="fromMonth"
                                             value={formData.fromMonth}
                                             onChange={handleChange}
-                                            placeholder="From Month"
                                             className="w-full p-1 border rounded-lg bg-gray-50"
                                         >
                                             {monthNames.map((month, i) => (
@@ -243,7 +340,7 @@ const Payments = () => {
                                             ))}
                                         </select>
                                     </div>
-                                    <div className="flex col-span-1 items-center gap-4">
+                                    <div className="flex items-center gap-4">
                                         <label className="block text-gray-600 text-sm mb-2">
                                             To
                                         </label>
@@ -251,7 +348,6 @@ const Payments = () => {
                                             name="toMonth"
                                             value={formData.toMonth}
                                             onChange={handleChange}
-                                            placeholder="To Month"
                                             className="w-full p-1 border rounded-lg bg-gray-50"
                                         >
                                             {monthNames.map((month, i) => (
@@ -266,6 +362,7 @@ const Payments = () => {
                                     Total Amount: ₹{formData.amount}
                                 </p>
                             </div>
+
                             <button
                                 type="submit"
                                 className="w-full p-2 bg-[#FF6F00] text-black font-semibold rounded-lg flex items-center justify-center gap-2 hover:bg-[#FFD166] hover:text-black disabled:opacity-50"
