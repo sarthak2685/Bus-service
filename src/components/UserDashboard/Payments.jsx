@@ -14,6 +14,7 @@ import config from "../Config";
 import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { jsPDF } from "jspdf";
 
 const Payments = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -53,6 +54,155 @@ const Payments = () => {
     const calculateAmount = (start, end, fee) => {
         const months = calculateMonthDiff(start, end);
         return fee * months;
+    };
+
+    const generateInvoicePDF = (data) => {
+        const doc = new jsPDF();
+        
+        // HEADER
+        const lineSpacing = 10;
+        let y = 15;
+      
+        // Company Header
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.text("CAPITAL BUS SERVICE", 105, y, { align: "center" });
+        y += 7;
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.text("123 Main Street, City Name, State - 000000", 105, y, { align: "center" });
+        y += 5;
+        doc.text("Phone: +91 9876543210 | Email: info@capitalbus.com", 105, y, { align: "center" });
+      
+        // Separation Line
+        y += 7;
+        doc.line(15, y, 195, y);
+        y += 10;
+      
+        // Student & Invoice Details (2 Column Style)
+        doc.setFont("helvetica", "bold");
+        doc.text("Student Name:", 15, y);
+        doc.setFont("helvetica", "normal");
+        doc.text(data.name, 55, y);
+      
+        doc.setFont("helvetica", "bold");
+        doc.text("Father's Name:", 110, y);
+        doc.setFont("helvetica", "normal");
+        doc.text(data.father_name, 150, y);
+        y += lineSpacing;
+      
+        doc.setFont("helvetica", "bold");
+        doc.text("Mobile Number:", 15, y);
+        doc.setFont("helvetica", "normal");
+        doc.text(data.mobile, 55, y);
+      
+        doc.setFont("helvetica", "bold");
+        doc.text("Payment Method:", 110, y);
+        doc.setFont("helvetica", "normal");
+        doc.text(data.payment_method, 150, y);
+        y += lineSpacing;
+      
+        doc.setFont("helvetica", "bold");
+        doc.text("Start Date:", 15, y);
+        doc.setFont("helvetica", "normal");
+        doc.text(data.start_month, 55, y);
+      
+        doc.setFont("helvetica", "bold");
+        doc.text("End Date:", 110, y);
+        doc.setFont("helvetica", "normal");
+        doc.text(data.end_month, 150, y);
+        y += 12;
+        doc.line(15, y, 195, y);
+        y += 8;
+      
+        // Table Header
+        doc.text("Description", 20, y + 7);
+        doc.text("Rate", 95, y + 7);
+        doc.text("Months", 130, y + 7);
+        doc.text("Total", 165, y + 7);
+        doc.setLineWidth(0.1);
+        doc.setDrawColor(150);
+        doc.setLineDash([1, 1], 0);
+        doc.line(15, y + 10, 195, y + 10);
+        
+        y += 15;
+        
+        // Table Data
+        const fee = parseFloat(data.bus_fee);
+        const months = parseInt(data.months);
+        const total = fee * months;
+        
+        doc.setFont("helvetica", "normal");
+        doc.text("Bus Fee", 20, y);
+        doc.text(fee.toFixed(2).toString(), 95, y, { align: 'left' });
+        doc.text(months.toString(), 135, y, { align: 'center' });
+        doc.text(total.toFixed(2).toString(), 165, y, { align: 'left' });
+      
+        doc.setLineDash([]);
+        y += 15;
+      
+        // Grand Total
+        doc.setFont("helvetica", "bold");
+        doc.text("Grand Total:", 135, y);
+        doc.text(total.toFixed(2).toString(), 165, y);
+        y += 15;
+      
+        // Separation Line
+        doc.line(15, y, 195, y);
+        y += 8;
+      
+        // Footer
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "italic");
+        doc.text("This bill is computer generated and does not require signature.", 105, y, { align: "center" });
+      
+        // Save PDF
+        doc.save(`Invoice_${data.name}_${data.start_month}.pdf`);
+    };
+
+    const handleGenerateInvoice = async (paymentData) => {
+        try {
+            const storedUser = JSON.parse(localStorage.getItem("user"));
+            const user = storedUser?.data?.user_data;
+            
+            const payload = {
+                name: user.name,
+                father_name: user.fathers_name,
+                mobile: user.phone_number,
+                route: formData.route,
+                driver: user.driver?.name || "N/A",
+                start_month: fromDate.toISOString().split('T')[0],
+                end_month: toDate.toISOString().split('T')[0],
+                months: totalMonths,
+                late_fee: 0,
+                payment_method: "Online (Razorpay)",
+                grand_total: formData.amount.toFixed(2),
+                bus_fee: monthlyFee,
+            };
+
+            const response = await fetch(`${config.apiUrl}/invoices/`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Token ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "Failed to generate invoice");
+            }
+
+            // Generate PDF invoice
+            generateInvoicePDF(data);
+            
+            return data;
+        } catch (error) {
+            console.error("Invoice generation failed:", error);
+            throw error;
+        }
     };
 
     const fetchInvoice = async () => {
@@ -287,8 +437,11 @@ const Payments = () => {
                         );
 
                         if (verifyResponse.data && verifyResponse.data.status === "Payment Verified") {
+                            // Generate invoice after successful payment verification
+                            const invoiceData = await handleGenerateInvoice(paymentData);
+                            
                             setIsModalOpen(false);
-                            setSuccessMessage("Payment verified successfully!");
+                            setSuccessMessage("Payment verified successfully! Invoice has been generated.");
                             fetchInvoice();
                         } else {
                             const errorMsg = verifyResponse.data?.message || 
