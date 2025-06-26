@@ -23,14 +23,22 @@ const Payments = () => {
     const [lastPaymentDate, setLastPaymentDate] = useState("");
     const [nextDueDate, setNextDueDate] = useState("");
     const [isCollapsed, setIsCollapsed] = useState(false);
-    const [paymentHistory, setPaymentHistory] = useState(null);
+    const [paymentHistory, setPaymentHistory] = useState([]);
     const [paymentError, setPaymentError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
 
     const token = JSON.parse(localStorage.getItem("user"))?.data?.token;
 
-    const [fromDate, setFromDate] = useState(new Date());
-    const [toDate, setToDate] = useState(new Date());
+    const [fromDate, setFromDate] = useState(() => {
+        const date = new Date();
+        return new Date(date.getFullYear(), date.getMonth(), 1);
+    });
+
+    const [toDate, setToDate] = useState(() => {
+        const date = new Date();
+        return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    });
+
     const [totalMonths, setTotalMonths] = useState(1);
 
     const [formData, setFormData] = useState({
@@ -44,10 +52,14 @@ const Payments = () => {
     });
 
     const calculateMonthDiff = (start, end) => {
+        const startDate = new Date(start.getFullYear(), start.getMonth(), 1);
+        const endDate = new Date(end.getFullYear(), end.getMonth() + 1, 0);
+
         const months =
-            (end.getFullYear() - start.getFullYear()) * 12 +
-            (end.getMonth() - start.getMonth()) +
+            (endDate.getFullYear() - startDate.getFullYear()) * 12 +
+            (endDate.getMonth() - startDate.getMonth()) +
             1;
+
         return months > 0 ? months : 1;
     };
 
@@ -58,11 +70,11 @@ const Payments = () => {
 
     const generateInvoicePDF = (data) => {
         const doc = new jsPDF();
-        
+
         // HEADER
         const lineSpacing = 10;
         let y = 15;
-      
+
         // Company Header
         doc.setFontSize(16);
         doc.setFont("helvetica", "bold");
@@ -70,43 +82,47 @@ const Payments = () => {
         y += 7;
         doc.setFontSize(11);
         doc.setFont("helvetica", "normal");
-        doc.text("123 Main Street, City Name, State - 000000", 105, y, { align: "center" });
+        doc.text("123 Main Street, City Name, State - 000000", 105, y, {
+            align: "center",
+        });
         y += 5;
-        doc.text("Phone: +91 9876543210 | Email: info@capitalbus.com", 105, y, { align: "center" });
-      
+        doc.text("Phone: +91 9876543210 | Email: info@capitalbus.com", 105, y, {
+            align: "center",
+        });
+
         // Separation Line
         y += 7;
         doc.line(15, y, 195, y);
         y += 10;
-      
+
         // Student & Invoice Details (2 Column Style)
         doc.setFont("helvetica", "bold");
         doc.text("Student Name:", 15, y);
         doc.setFont("helvetica", "normal");
         doc.text(data.name, 55, y);
-      
+
         doc.setFont("helvetica", "bold");
         doc.text("Father's Name:", 110, y);
         doc.setFont("helvetica", "normal");
         doc.text(data.father_name, 150, y);
         y += lineSpacing;
-      
+
         doc.setFont("helvetica", "bold");
         doc.text("Mobile Number:", 15, y);
         doc.setFont("helvetica", "normal");
         doc.text(data.mobile, 55, y);
-      
+
         doc.setFont("helvetica", "bold");
         doc.text("Payment Method:", 110, y);
         doc.setFont("helvetica", "normal");
         doc.text(data.payment_method, 150, y);
         y += lineSpacing;
-      
+
         doc.setFont("helvetica", "bold");
         doc.text("Start Date:", 15, y);
         doc.setFont("helvetica", "normal");
         doc.text(data.start_month, 55, y);
-      
+
         doc.setFont("helvetica", "bold");
         doc.text("End Date:", 110, y);
         doc.setFont("helvetica", "normal");
@@ -114,7 +130,7 @@ const Payments = () => {
         y += 12;
         doc.line(15, y, 195, y);
         y += 8;
-      
+
         // Table Header
         doc.text("Description", 20, y + 7);
         doc.text("Rate", 95, y + 7);
@@ -124,39 +140,45 @@ const Payments = () => {
         doc.setDrawColor(150);
         doc.setLineDash([1, 1], 0);
         doc.line(15, y + 10, 195, y + 10);
-        
+
         y += 15;
-        
+
         // Table Data
         const fee = parseFloat(data.bus_fee);
         const months = parseInt(data.months);
         const total = fee * months;
-        
+
         doc.setFont("helvetica", "normal");
         doc.text("Bus Fee", 20, y);
-        doc.text(fee.toFixed(2).toString(), 95, y, { align: 'left' });
-        doc.text(months.toString(), 135, y, { align: 'center' });
-        doc.text(total.toFixed(2).toString(), 165, y, { align: 'left' });
-      
+        doc.text(fee.toFixed(2).toString(), 95, y, { align: "left" });
+        doc.text(months.toString(), 135, y, { align: "center" });
+        doc.text(total.toFixed(2).toString(), 165, y, { align: "left" });
+
         doc.setLineDash([]);
         y += 15;
-      
+
         // Grand Total
         doc.setFont("helvetica", "bold");
         doc.text("Grand Total:", 135, y);
         doc.text(total.toFixed(2).toString(), 165, y);
         y += 15;
-      
+
         // Separation Line
         doc.line(15, y, 195, y);
         y += 8;
-      
+
         // Footer
         doc.setFontSize(10);
         doc.setFont("helvetica", "italic");
-        doc.text("This bill is computer generated and does not require signature.", 105, y, { align: "center" });
-      
+        doc.text(
+            "This bill is computer generated and does not require signature.",
+            105,
+            y,
+            { align: "center" }
+        );
+
         // Save PDF
+
         doc.save(`Invoice_${data.name}_${data.start_month}.pdf`);
     };
 
@@ -164,15 +186,15 @@ const Payments = () => {
         try {
             const storedUser = JSON.parse(localStorage.getItem("user"));
             const user = storedUser?.data?.user_data;
-            
+
             const payload = {
                 name: user.name,
                 father_name: user.fathers_name,
                 mobile: user.phone_number,
                 route: formData.route,
                 driver: user.driver?.name || "N/A",
-                start_month: fromDate.toISOString().split('T')[0],
-                end_month: toDate.toISOString().split('T')[0],
+                start_month: fromDate.toISOString().split("T")[0],
+                end_month: toDate.toISOString().split("T")[0],
                 months: totalMonths,
                 late_fee: 0,
                 payment_method: "Online (Razorpay)",
@@ -195,13 +217,33 @@ const Payments = () => {
                 throw new Error(data.message || "Failed to generate invoice");
             }
 
-            // Generate PDF invoice
             generateInvoicePDF(data);
-            
             return data;
         } catch (error) {
             console.error("Invoice generation failed:", error);
             throw error;
+        }
+    };
+
+    const handleDownloadInvoice = async (payment) => {
+        try {
+            // Implement your invoice download logic here
+            // For example:
+            const invoiceData = {
+                ...payment,
+                name: formData.name,
+                father_name: formData.fatherName,
+                mobile: formData.phone,
+                route: formData.route,
+                bus_fee: monthlyFee,
+                start_month: payment.start_month,
+                end_month: payment.end_month,
+                months: payment.months,
+                grand_total: payment.grand_total,
+            };
+            generateInvoicePDF(invoiceData);
+        } catch (error) {
+            console.error("Error downloading invoice:", error);
         }
     };
 
@@ -229,68 +271,75 @@ const Payments = () => {
             const result = await response.json();
             const student = result?.data?.[0];
 
-            let initialFromDate = new Date();
-            initialFromDate.setDate(1);
-            let initialToDate = new Date(initialFromDate);
+            // Initialize dates based on API response
+            let initialFromDate, initialToDate;
 
-            if (result.end_month) {
-                const end = new Date(`${result.end_month}T00:00:00`);
-                if (!isNaN(end)) {
-                    initialFromDate = new Date(end);
-                    initialFromDate.setMonth(end.getMonth() + 1);
-                    initialFromDate.setDate(1);
-                    initialToDate = new Date(initialFromDate);
-                    
-                    const formattedEnd = end.toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                    });
-                    setNextDueDate(formattedEnd);
-                }
+            if (result.next_date) {
+                const nextDate = new Date(result.next_date);
+                initialFromDate = new Date(
+                    nextDate.getFullYear(),
+                    nextDate.getMonth(),
+                    1
+                );
+                initialToDate = new Date(
+                    nextDate.getFullYear(),
+                    nextDate.getMonth() + 1,
+                    0
+                );
+            } else {
+                const now = new Date();
+                initialFromDate = new Date(
+                    now.getFullYear(),
+                    now.getMonth(),
+                    1
+                );
+                initialToDate = new Date(
+                    now.getFullYear(),
+                    now.getMonth() + 1,
+                    0
+                );
             }
 
-            setFromDate(initialFromDate);
-            setToDate(initialToDate);
-            setTotalMonths(1);
+            // Set payment history
+            if (result.last_payment && result.last_payment.length > 0) {
+                setPaymentHistory(result.last_payment);
 
-            if (result.start_month && result.grand_total) {
-                const start = new Date(`${result.start_month}T00:00:00`);
-                const end = new Date(`${result.end_month}T00:00:00`);
-
+                // For last payment display (single card)
+                const lastPayment = result.last_payment[0];
+                const start = new Date(lastPayment.start_month);
                 const formattedStart = start.toLocaleDateString("en-IN", {
                     day: "numeric",
                     month: "short",
                     year: "numeric",
                 });
-
-                const startMonth = start.toLocaleString("en-IN", {
-                    month: "short",
-                });
-                const endMonth = end.toLocaleString("en-IN", {
-                    month: "short",
-                });
-
-                const startYear = start.getFullYear();
-                const endYear = end.getFullYear();
-
-                const monthRange =
-                    startYear === endYear
-                        ? `${startMonth} - ${endMonth} ${startYear}`
-                        : `${startMonth} ${startYear} - ${endMonth} ${endYear}`;
-
-                setPaymentHistory({
-                    date: formattedStart,
-                    amount: result.grand_total,
-                    range: monthRange,
-                });
-
                 setLastPaymentDate(
-                    `${formattedStart} (₹ ${result.grand_total})`
+                    `${formattedStart} (₹ ${lastPayment.grand_total})`
                 );
             }
 
-            const busFee = parseInt(result.bus_fee) || parseInt(user?.driver?.route?.amount) || 0;
+            // Set next due date if available
+            if (result.next_date) {
+                const nextDue = new Date(result.next_date);
+                setNextDueDate(
+                    nextDue.toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                    })
+                );
+            }
+
+            // Set the dates and calculate months
+            setFromDate(initialFromDate);
+            setToDate(initialToDate);
+            const months = calculateMonthDiff(initialFromDate, initialToDate);
+            setTotalMonths(months);
+
+            // Set fee and form data
+            const busFee =
+                parseInt(result.bus_fee) ||
+                parseInt(user?.driver?.route?.amount) ||
+                0;
             setMonthlyFee(busFee);
 
             if (student) {
@@ -302,7 +351,11 @@ const Payments = () => {
                     phone: student.phone_number || "",
                     fatherName: student.fathers_name || "",
                     route: student?.driver?.route?.name || "",
-                    amount: busFee,
+                    amount: calculateAmount(
+                        initialFromDate,
+                        initialToDate,
+                        busFee
+                    ),
                 }));
             }
         } catch (err) {
@@ -318,6 +371,14 @@ const Payments = () => {
             const fee = parseInt(user?.driver?.route?.amount) || 0;
             setMonthlyFee(fee);
 
+            const initialFromDate = new Date();
+            initialFromDate.setDate(1);
+            const initialToDate = new Date(
+                initialFromDate.getFullYear(),
+                initialFromDate.getMonth() + 1,
+                0
+            );
+
             setFormData((prev) => ({
                 ...prev,
                 name: user?.name || "",
@@ -326,7 +387,7 @@ const Payments = () => {
                 phone: user?.phone_number || "",
                 fatherName: user?.fathers_name || "",
                 route: user?.driver?.route?.name || "",
-                amount: fee,
+                amount: calculateAmount(initialFromDate, initialToDate, fee),
             }));
         };
 
@@ -335,12 +396,17 @@ const Payments = () => {
     }, []);
 
     const handleToDateChange = (date) => {
-        const monthDiff = calculateMonthDiff(fromDate, date);
-        setToDate(date);
+        const lastDayOfMonth = new Date(
+            date.getFullYear(),
+            date.getMonth() + 1,
+            0
+        );
+        const monthDiff = calculateMonthDiff(fromDate, lastDayOfMonth);
+        setToDate(lastDayOfMonth);
         setTotalMonths(monthDiff);
         setFormData((prev) => ({
             ...prev,
-            amount: calculateAmount(fromDate, date, monthlyFee),
+            amount: calculateAmount(fromDate, lastDayOfMonth, monthlyFee),
         }));
     };
 
@@ -351,8 +417,8 @@ const Payments = () => {
                 return;
             }
 
-            const script = document.createElement('script');
-            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            const script = document.createElement("script");
+            script.src = "https://checkout.razorpay.com/v1/checkout.js";
             script.onload = () => resolve(true);
             script.onerror = () => resolve(false);
             document.body.appendChild(script);
@@ -363,16 +429,16 @@ const Payments = () => {
         setLoading(true);
         setPaymentError(null);
         setSuccessMessage(null);
-        
+
         try {
             const isScriptLoaded = await loadRazorpayScript();
             if (!isScriptLoaded) {
-                throw new Error('Razorpay SDK failed to load. Are you online?');
+                throw new Error("Razorpay SDK failed to load. Are you online?");
             }
 
             const storedUser = JSON.parse(localStorage.getItem("user"));
             const user = storedUser?.data?.user_data;
-            
+
             const orderResponse = await axios.post(
                 `${config.apiUrl}/create-order/`,
                 {
@@ -382,12 +448,12 @@ const Payments = () => {
                     notes: {
                         userId: user.id,
                         name: user.name,
-                        fromDate: fromDate.toISOString().split('T')[0],
-                        toDate: toDate.toISOString().split('T')[0],
+                        fromDate: fromDate.toISOString().split("T")[0],
+                        toDate: toDate.toISOString().split("T")[0],
                         months: totalMonths,
                         route: formData.route,
-                        phone: user.phone_number
-                    }
+                        phone: user.phone_number,
+                    },
                 },
                 {
                     headers: {
@@ -409,20 +475,20 @@ const Payments = () => {
                 description: `Payment for ${totalMonths} month(s) transport fee`,
                 image: "https://your-school-logo.png",
                 order_id: orderResponse.data.id,
-                handler: async function(response) {
+                handler: async function (response) {
                     try {
                         const paymentData = {
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_signature: response.razorpay_signature,
                             amount: formData.amount,
-                            fromDate: fromDate.toISOString().split('T')[0],
-                            toDate: toDate.toISOString().split('T')[0],
+                            fromDate: fromDate.toISOString().split("T")[0],
+                            toDate: toDate.toISOString().split("T")[0],
                             months: totalMonths,
                             user_id: user.id,
                             phone_number: user.phone_number,
                             route: formData.route,
-                            order_id: orderResponse.data.id
+                            order_id: orderResponse.data.id,
                         };
 
                         const verifyResponse = await axios.post(
@@ -436,23 +502,31 @@ const Payments = () => {
                             }
                         );
 
-                        if (verifyResponse.data && verifyResponse.data.status === "Payment Verified") {
-                            // Generate invoice after successful payment verification
-                            const invoiceData = await handleGenerateInvoice(paymentData);
-                            
+                        if (
+                            verifyResponse.data &&
+                            verifyResponse.data.status === "Payment Verified"
+                        ) {
+                            const invoiceData = await handleGenerateInvoice(
+                                paymentData
+                            );
+
                             setIsModalOpen(false);
-                            setSuccessMessage("Payment verified successfully! Invoice has been generated.");
+                            setSuccessMessage(
+                                "Payment verified successfully! Invoice has been generated."
+                            );
                             fetchInvoice();
                         } else {
-                            const errorMsg = verifyResponse.data?.message || 
-                                          "Payment verification failed despite successful response";
+                            const errorMsg =
+                                verifyResponse.data?.message ||
+                                "Payment verification failed despite successful response";
                             setPaymentError(errorMsg);
                         }
                     } catch (error) {
                         console.error("Payment verification error:", error);
-                        const errorMsg = error.response?.data?.error?.description || 
-                                       error.response?.data?.message || 
-                                       error.message;
+                        const errorMsg =
+                            error.response?.data?.error?.description ||
+                            error.response?.data?.message ||
+                            error.message;
                         setPaymentError(errorMsg);
                     } finally {
                         setLoading(false);
@@ -461,27 +535,27 @@ const Payments = () => {
                 prefill: {
                     name: user.name,
                     email: user.email || "student@school.com",
-                    contact: user.phone_number
+                    contact: user.phone_number,
                 },
                 theme: {
-                    color: "#FF6F00"
+                    color: "#FF6F00",
                 },
                 modal: {
                     ondismiss: () => {
                         setLoading(false);
                         setPaymentError("Payment cancelled by user");
-                    }
-                }
+                    },
+                },
             };
 
             const rzp = new window.Razorpay(options);
             rzp.open();
-            
         } catch (error) {
             console.error("Payment error:", error);
-            const errorMsg = error.response?.data?.error?.description || 
-                           error.response?.data?.message || 
-                           error.message;
+            const errorMsg =
+                error.response?.data?.error?.description ||
+                error.response?.data?.message ||
+                error.message;
             setPaymentError(errorMsg);
             setLoading(false);
         }
@@ -594,28 +668,76 @@ const Payments = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="border border-[#FFF3E0] bg-gray-50">
-                                    {paymentHistory ? (
-                                        <tr className="border border-[#FFF3E0]">
-                                            <td className="p-2 md:p-3">
-                                                {paymentHistory.date}
-                                            </td>
-                                            <td className="p-2 md:p-3 text-green-700 font-medium">
-                                                ₹{paymentHistory.amount}
-                                            </td>
-                                            <td className="p-2 md:p-3 text-green-700 font-medium">
-                                                {paymentHistory.range}
-                                            </td>
-                                            <td className="p-2 md:p-3 text-green-600 flex items-center gap-1">
-                                                <MdCheckCircle className="text-green-600" />{" "}
-                                                Paid
-                                            </td>
-                                            <td className="p-2 md:p-3">
-                                                <button className="flex items-center gap-1 text-blue-700 hover:text-blue-900">
-                                                    <MdFileDownload className="text-xl" />{" "}
-                                                    Download
-                                                </button>
-                                            </td>
-                                        </tr>
+                                    {paymentHistory.length > 0 ? (
+                                        paymentHistory.map((payment) => {
+                                            const start = new Date(
+                                                payment.start_month
+                                            );
+                                            const end = new Date(
+                                                payment.end_month
+                                            );
+
+                                            const paymentDate =
+                                                start.toLocaleDateString(
+                                                    "en-IN",
+                                                    {
+                                                        day: "numeric",
+                                                        month: "short",
+                                                        year: "numeric",
+                                                    }
+                                                );
+
+                                            const startMonth =
+                                                start.toLocaleString("en-IN", {
+                                                    month: "short",
+                                                });
+                                            const endMonth = end.toLocaleString(
+                                                "en-IN",
+                                                { month: "short" }
+                                            );
+                                            const startYear =
+                                                start.getFullYear();
+                                            const endYear = end.getFullYear();
+
+                                            const monthRange =
+                                                startYear === endYear
+                                                    ? `${startMonth} - ${endMonth} ${startYear}`
+                                                    : `${startMonth} ${startYear} - ${endMonth} ${endYear}`;
+
+                                            return (
+                                                <tr
+                                                    key={payment.id}
+                                                    className="border border-[#FFF3E0]"
+                                                >
+                                                    <td className="p-2 md:p-3">
+                                                        {paymentDate}
+                                                    </td>
+                                                    <td className="p-2 md:p-3 text-green-700 font-medium">
+                                                        ₹{payment.grand_total}
+                                                    </td>
+                                                    <td className="p-2 md:p-3">
+                                                        {monthRange}
+                                                    </td>
+                                                    <td className="p-2 md:p-3 text-green-600 flex items-center gap-1">
+                                                        <MdCheckCircle className="text-green-600" />{" "}
+                                                        Paid
+                                                    </td>
+                                                    <td className="p-2 md:p-3">
+                                                        <button
+                                                            className="flex items-center gap-1 text-blue-700 hover:text-blue-900"
+                                                            onClick={() =>
+                                                                handleDownloadInvoice(
+                                                                    payment
+                                                                )
+                                                            }
+                                                        >
+                                                            <MdFileDownload className="text-xl" />{" "}
+                                                            Download
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     ) : (
                                         <tr>
                                             <td
@@ -691,11 +813,29 @@ const Payments = () => {
                                         </label>
                                         <DatePicker
                                             selected={fromDate}
-                                            onChange={() => {}}
-                                            dateFormat="MMMM yyyy"
+                                            onChange={(date) => {
+                                                const firstOfMonth = new Date(
+                                                    date.getFullYear(),
+                                                    date.getMonth(),
+                                                    1
+                                                );
+                                                setFromDate(firstOfMonth);
+                                                // Update toDate to be last day of the same month by default
+                                                const lastDayOfMonth = new Date(
+                                                    firstOfMonth.getFullYear(),
+                                                    firstOfMonth.getMonth() + 1,
+                                                    0
+                                                );
+                                                setToDate(lastDayOfMonth);
+                                                setTotalMonths(1);
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    amount: monthlyFee,
+                                                }));
+                                            }}
+                                            dateFormat="MMM yyyy"
                                             showMonthYearPicker
-                                            className="w-full p-2 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
-                                            disabled
+                                            className="w-full p-2 border rounded-lg bg-gray-50 focus:border-[#FF6F00] focus:ring-[#FF6F00]"
                                         />
                                     </div>
                                     <div className="flex flex-col gap-1">
@@ -705,7 +845,7 @@ const Payments = () => {
                                         <DatePicker
                                             selected={toDate}
                                             onChange={handleToDateChange}
-                                            dateFormat="MMMM yyyy"
+                                            dateFormat="MMM yyyy"
                                             showMonthYearPicker
                                             minDate={fromDate}
                                             className="w-full p-2 border rounded-lg bg-gray-50 focus:border-[#FF6F00] focus:ring-[#FF6F00]"
@@ -727,9 +867,25 @@ const Payments = () => {
                             >
                                 {loading ? (
                                     <>
-                                        <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        <svg
+                                            className="animate-spin -ml-1 mr-2 h-5 w-5 text-black"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            ></path>
                                         </svg>
                                         Processing...
                                     </>
