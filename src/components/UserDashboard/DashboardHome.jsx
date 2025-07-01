@@ -44,9 +44,8 @@ const DashboardHome = () => {
     const [tempEmergencyContact, setTempEmergencyContact] = useState(
         userInfo.emergencyContact
     );
-    const [sosMessage, setSosMessage] = useState("");
     const [isCollapsed, setIsCollapsed] = useState(false);
-    const [showConfirm, setShowConfirm] = useState(false);
+    const [isSending, setIsSending] = useState(false);
 
     const handleEmergencyChange = (e) => {
         setTempEmergencyContact(e.target.value);
@@ -68,46 +67,57 @@ const DashboardHome = () => {
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    const handleEmergencyClick = () => {
-        setShowConfirm(true);
-    };
-
-    const sendWhatsAppMessage = (phoneNumber, message) => {
-        const whatsappLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
-            message
-        )}`;
-        window.open(whatsappLink, "_blank");
-    };
-
-    const confirmEmergency = () => {
-        setShowConfirm(false);
-
-        // Admin phone number (you may need to get this from your config or backend)
-        const adminPhone = "+918981516960"; // Replace with actual admin number
-        const driverPhone = `+91${driverInfo.driverContact}`;
+const sendSOSMessage = async () => {
+    setIsSending(true);
+    
+    try {
+        const adminPhone = "+918981516960"; // Admin phone number
 
         const emergencyMessage = `🚨 EMERGENCY ALERT 🚨
-        
+            
 Student: ${userInfo.childName}
 Class: ${userInfo.class}-${userInfo.section}
 Father: ${userInfo.fatherName}
 Contact: ${userInfo.phone}
+Emergency Contact: ${userInfo.emergencyContact}
 
-${sosMessage || "Emergency alert triggered!"}
+EMERGENCY SOS triggered from parent dashboard!
 
-Current Location: ${busInfo.pickupLocation} (${busInfo.pickupDescription})`;
+Current Location: ${busInfo.pickupLocation} (${busInfo.pickupDescription})
+Bus Number: ${busInfo.busNumber}
+Arrival Time: ${busInfo.arrivalTime}
 
-        // Send to admin
-        sendWhatsAppMessage(adminPhone, emergencyMessage);
+⚠️ Immediate attention required! Parent has pressed the SOS button in the app.`;
 
-        // Send to driver if contact exists
-        if (driverInfo.driverContact && driverInfo.driverContact !== "N/A") {
-            sendWhatsAppMessage(driverPhone, emergencyMessage);
+        // Using GET request with encoded parameters
+        const response = await fetch(
+            `${config.apiUrl}/send-msg/sos/?mobile_no=${encodeURIComponent(adminPhone)}&msg=${encodeURIComponent(emergencyMessage)}`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization: `Token ${token}`,
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to send SOS message");
         }
 
-        alert("Emergency alert sent via WhatsApp to admin and driver!");
-        setSosMessage("");
-    };
+        const data = await response.json();
+        if (data.success) {
+            alert("Emergency alert has been sent to admin!");
+        } else {
+            throw new Error(data.message || "Failed to send SOS message");
+        }
+    } catch (error) {
+        console.error("Error sending SOS:", error);
+        alert("Failed to send emergency alert. Please try again.");
+    } finally {
+        setIsSending(false);
+    }
+};
 
     return (
         <>
@@ -126,51 +136,15 @@ Current Location: ${busInfo.pickupLocation} (${busInfo.pickupDescription})`;
                         </h2>
                         <button
                             className="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors duration-300 flex items-center gap-2"
-                            onClick={handleEmergencyClick}
+                            onClick={sendSOSMessage}
+                            disabled={isSending}
                         >
                             <MdNotificationsActive className="text-xl" />
-                            <span>Emergency SOS</span>
+                            <span>
+                                {isSending ? "Sending..." : "Emergency SOS"}
+                            </span>
                         </button>
                     </div>
-
-                    {/* Confirmation Dialog */}
-                    {showConfirm && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                            <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-                                <h2 className="text-xl font-bold text-gray-800 mb-4">
-                                    🚨 Confirm Emergency Alert
-                                </h2>
-                                <p className="text-gray-600">
-                                    This will send WhatsApp messages to school
-                                    admin and driver.
-                                </p>
-                                <textarea
-                                    placeholder="Describe the emergency situation..."
-                                    className="w-full mt-4 p-2 border border-gray-300 rounded-md resize-none"
-                                    rows={4}
-                                    value={sosMessage}
-                                    onChange={(e) =>
-                                        setSosMessage(e.target.value)
-                                    }
-                                />
-
-                                <div className="mt-4 flex justify-center gap-4">
-                                    <button
-                                        className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700"
-                                        onClick={confirmEmergency}
-                                    >
-                                        Send Emergency Alert
-                                    </button>
-                                    <button
-                                        className="px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400"
-                                        onClick={() => setShowConfirm(false)}
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     <div className="bg-white rounded-lg shadow-sm">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
@@ -214,7 +188,7 @@ Current Location: ${busInfo.pickupLocation} (${busInfo.pickupDescription})`;
                                     </div>
                                     <div className="flex items-center">
                                         <span className="text-black w-32">
-                                            Father’s Name:
+                                            Father's Name:
                                         </span>
                                         <span className="text-gray-800">
                                             {userInfo.fatherName}
