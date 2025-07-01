@@ -26,6 +26,8 @@ const Payments = () => {
     const [paymentHistory, setPaymentHistory] = useState([]);
     const [paymentError, setPaymentError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
+    const [lastPayment, setLastPayment] = useState(null);
+    const [nextDate, setNextDate] = useState(null);
 
     const token = JSON.parse(localStorage.getItem("user"))?.data?.token;
 
@@ -178,23 +180,27 @@ const Payments = () => {
         );
 
         // Save PDF
-
         doc.save(`Invoice_${data.name}_${data.start_month}.pdf`);
     };
-
-    const handleGenerateInvoice = async (paymentData) => {
+    const formatLocalDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };  
+        const handleGenerateInvoice = async (paymentData) => {
         try {
             const storedUser = JSON.parse(localStorage.getItem("user"));
             const user = storedUser?.data?.user_data;
-
+            console.log("User Data of payment:", fromDate);
             const payload = {
                 name: user.name,
                 father_name: user.fathers_name,
                 mobile: user.phone_number,
                 route: formData.route,
                 driver: user.driver?.name || "N/A",
-                start_month: fromDate.toISOString().split("T")[0],
-                end_month: toDate.toISOString().split("T")[0],
+                start_month: formatLocalDate(fromDate), 
+                end_month: formatLocalDate(toDate),
                 months: totalMonths,
                 late_fee: 0,
                 payment_method: "Online (Razorpay)",
@@ -227,8 +233,6 @@ const Payments = () => {
 
     const handleDownloadInvoice = async (payment) => {
         try {
-            // Implement your invoice download logic here
-            // For example:
             const invoiceData = {
                 ...payment,
                 name: formData.name,
@@ -270,7 +274,35 @@ const Payments = () => {
 
             const result = await response.json();
             const student = result?.data?.[0];
+            console.log("Invoice Data:", result);
+            const lastPaymentDate = result?.last_payment_date;
 
+if (lastPaymentDate) {
+  const dateObj = new Date(lastPaymentDate);
+  
+  // Extract day, month, year (local time)
+  const day = String(dateObj.getDate()).padStart(2, '0'); // Ensure 2 digits (e.g., "01")
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+  const year = dateObj.getFullYear();
+
+  const formattedDate = `${day}/${month}/${year}`;
+  setLastPayment(formattedDate|| null);
+
+}
+const next = result?.next_date;
+
+if (next) {
+  const dateObj = new Date(next);
+  
+  // Extract day, month, year (local time)
+  const day = String(dateObj.getDate()).padStart(2, '0'); // Ensure 2 digits (e.g., "01")
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+  const year = dateObj.getFullYear();
+
+  const formattedDate = `${day}/${month}/${year}`;
+  setNextDate(formattedDate|| null);
+
+}
             // Initialize dates based on API response
             let initialFromDate, initialToDate;
 
@@ -286,6 +318,8 @@ const Payments = () => {
                     nextDate.getMonth() + 1,
                     0
                 );
+                console.log("Initial From Date:", initialFromDate);
+                console.log("Initial To Date:", initialToDate);
             } else {
                 const now = new Date();
                 initialFromDate = new Date(
@@ -305,9 +339,9 @@ const Payments = () => {
                 setPaymentHistory(result.last_payment);
 
                 // For last payment display (single card)
-                const lastPayment = result.last_payment[0];
+                const lastPayment = result.last_payment_date;
                 const start = new Date(lastPayment.start_month);
-                const formattedStart = start.toLocaleDateString("en-IN", {
+                const formattedStart = lastPayment.toLocaleDateString("en-IN", {
                     day: "numeric",
                     month: "short",
                     year: "numeric",
@@ -621,7 +655,7 @@ const Payments = () => {
                                     Last Payment
                                 </p>
                                 <p className="text-xl md:text-2xl font-bold text-blue-600">
-                                    {lastPaymentDate || "N/A"}
+                                    {lastPayment || "N/A"}
                                 </p>
                             </div>
                         </div>
@@ -632,7 +666,7 @@ const Payments = () => {
                                     Next Due
                                 </p>
                                 <p className="text-xl md:text-2xl font-bold text-red-600">
-                                    {nextDueDate || "N/A"}
+                                    {nextDate || "N/A"}
                                 </p>
                             </div>
                         </div>
@@ -813,29 +847,11 @@ const Payments = () => {
                                         </label>
                                         <DatePicker
                                             selected={fromDate}
-                                            onChange={(date) => {
-                                                const firstOfMonth = new Date(
-                                                    date.getFullYear(),
-                                                    date.getMonth(),
-                                                    1
-                                                );
-                                                setFromDate(firstOfMonth);
-                                                // Update toDate to be last day of the same month by default
-                                                const lastDayOfMonth = new Date(
-                                                    firstOfMonth.getFullYear(),
-                                                    firstOfMonth.getMonth() + 1,
-                                                    0
-                                                );
-                                                setToDate(lastDayOfMonth);
-                                                setTotalMonths(1);
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    amount: monthlyFee,
-                                                }));
-                                            }}
+                                            onChange={() => {}} // Disabled
                                             dateFormat="MMM yyyy"
                                             showMonthYearPicker
-                                            className="w-full p-2 border rounded-lg bg-gray-50 focus:border-[#FF6F00] focus:ring-[#FF6F00]"
+                                            className="w-full p-2 border rounded-lg bg-gray-50 focus:border-[#FF6F00] focus:ring-[#FF6F00] cursor-not-allowed"
+                                            readOnly
                                         />
                                     </div>
                                     <div className="flex flex-col gap-1">
