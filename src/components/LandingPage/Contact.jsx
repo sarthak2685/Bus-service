@@ -1,7 +1,65 @@
-import React from "react";
+import React, { useState } from "react";
 import { FaPhoneAlt, FaEnvelope, FaMapMarkerAlt } from "react-icons/fa";
+import config from "../Config";
 
 const Contact = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone_number: "",
+    message: ""
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    try {
+      const response = await fetch(`${config.apiUrl}/contact/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Token 5805278e147b5589a6ee7fdffe1dd0ab0033d206` 
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        setSubmitStatus({
+          success: true,
+          message: 'Message sent successfully! We will get back to you soon.'
+        });
+        setFormData({
+          name: "",
+          email: "",
+          phone_number: "",
+          message: ""
+        });
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to send message');
+      }
+    } catch (error) {
+      setSubmitStatus({
+        success: false,
+        message: error.message || 'An error occurred while sending your message. Please try again.'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div
       className="contact-page min-h-screen bg-white px-6 py-12 flex flex-col items-center relative overflow-hidden"
@@ -31,42 +89,58 @@ const Contact = () => {
             <FaEnvelope className="text-orange-500 mr-3" />
             <span>contact@capitalservice.com</span>
           </div>
-          {/* <div className="flex items-center text-gray-700">
-            <FaMapMarkerAlt className="text-orange-500 mr-3" />
-            <span>123, School Street, City Name, India</span>
-          </div> */}
         </div>
 
         {/* Contact Form */}
-        <form className="flex flex-col space-y-4">
+        <form className="flex flex-col space-y-4" onSubmit={handleSubmit}>
           <input
             type="text"
+            name="name"
             placeholder="Your Name"
             className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
             required
+            value={formData.name}
+            onChange={handleChange}
           />
           <input
             type="email"
+            name="email"
             placeholder="Your Email"
             className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
             required
+            value={formData.email}
+            onChange={handleChange}
           />
           <input
-            type="number"
+            type="tel"
+            name="phone_number"
             placeholder="Your Number"
             className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
             required
+            value={formData.phone_number}
+            onChange={handleChange}
           />
           <textarea
+            name="message"
             placeholder="Your Message"
             className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 h-32"
             required
+            value={formData.message}
+            onChange={handleChange}
           ></textarea>
+          
+          {submitStatus && (
+            <div className={`p-3 rounded-lg ${submitStatus.success ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {submitStatus.message}
+            </div>
+          )}
+          
           <button
             type="submit"
-            className="bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors"
+            className="bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
+            disabled={isSubmitting}
           >
-            Send Message
+            {isSubmitting ? 'Sending...' : 'Send Message'}
           </button>
         </form>
       </div>
