@@ -122,6 +122,14 @@ const Navbar = () => {
       }
     } catch (error) {
       console.error("Login error:", error);
+      toast.error("Invalid Credential! Please Try Again", {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     }
   };
 
@@ -132,7 +140,7 @@ const Navbar = () => {
           isScrolled ? "shadow-lg bg-white" : "bg-white"
         }`}
       >
-        <div className="container mx-auto flex justify-between items-center px-6 md:px-12">
+        <div className="container mx-auto flex justify-between items-center px-0 lg:px-12 ">
           <div className="text-2xl font-extrabold tracking-wide cursor-pointer">
             School Bus Service
           </div>
@@ -170,7 +178,7 @@ const Navbar = () => {
                   <a
                     href={`#${section}`}
                     onClick={() => setActiveSection(section)}
-                    className={`block py-2 px-6 md:px-4 transition duration-300  rounded-full ${
+                    className={`block py-2 px-6 md:px-5transition duration-300  rounded-full ${
                       activeSection === section
                         ? "bg-orange-500 text-white rounded-full border border-orange-500"
                         : "border-orange-500 text-orange-500"
