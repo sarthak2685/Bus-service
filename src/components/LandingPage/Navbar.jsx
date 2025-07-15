@@ -38,7 +38,7 @@ const Navbar = () => {
   
         if (data?.type) {
           setUserType(data.type);
-          console.log("role", data.type);
+          // console.log("role", data.type);
   
           if (data.type === "parent") {
             // Send OTP immediately
@@ -92,7 +92,7 @@ const Navbar = () => {
         body: JSON.stringify(payload),
       });
       const data = await response.json();
-      console.log("JSON response", data);
+      // console.log("JSON response", data);
       if (data.status === true) {
         toast.success("Login successfully!", {
           position: "top-right",
@@ -103,7 +103,7 @@ const Navbar = () => {
           draggable: true,
         });
         localStorage.setItem("user", JSON.stringify(data));
-        console.log("user", data.data);
+        // console.log("user", data.data);
         closeModal();
         if (data.data.type === "admin") {
           window.location.href = "/add-user";

@@ -53,11 +53,6 @@ const Footer = () => {
                 Contact
               </a>
             </li>
-            {/* <li>
-              <a href="/services" className="hover:text-orange-500">
-                Our Services
-              </a>
-            </li> */}
           </ul>
         </div>
 
@@ -80,11 +75,6 @@ const Footer = () => {
                 Refund Policy
               </Link>
             </li>
-            {/* <li>
-              <Link to="/faq" className="hover:text-orange-500">
-                FAQs
-              </Link>
-            </li> */}
           </ul>
         </div>
 
@@ -92,57 +82,23 @@ const Footer = () => {
         <div>
           <h3 className="text-xl font-semibold mb-4">Contact Us</h3>
           <ul className="space-y-3 text-sm">
-            {/* <li className="flex items-center">
-              <FaMapMarkerAlt className="mr-2" /> 123 School Lane, City, Country
-            </li> */}
             <li className="flex items-center">
-              <FaPhoneAlt className="mr-2" /> +91 9155286099
+              <a href="tel:+919155286099" className="flex items-center hover:text-orange-500">
+                <FaPhoneAlt className="mr-2" /> +91 9155286099
+              </a>
             </li>
             <li className="flex items-center">
-              <FaEnvelope className="mr-2" /> capitalbuserv@gmail.com            </li>
+              <a href="mailto:capitalbuserv@gmail.com" className="flex items-center hover:text-orange-500">
+                <FaEnvelope className="mr-2" /> capitalbuserv@gmail.com
+              </a>
+            </li>
           </ul>
-
-          {/* Social Media */}
-          <div className="flex space-x-4 mt-4">
-            <a
-              href="https://facebook.com"
-              target="_blank"
-              rel="noreferrer"
-              className="p-2 bg-white text-orange-500 rounded-full hover:bg-orange-400 hover:text-white transition"
-            >
-              <FaFacebookF />
-            </a>
-            <a
-              href="https://twitter.com"
-              target="_blank"
-              rel="noreferrer"
-              className="p-2 bg-white text-orange-500 rounded-full hover:bg-orange-400 transition"
-            >
-              <FaTwitter />
-            </a>
-            <a
-              href="https://instagram.com"
-              target="_blank"
-              rel="noreferrer"
-              className="p-2 bg-white text-orange-500 rounded-full hover:bg-orange-400 transition"
-            >
-              <FaInstagram />
-            </a>
-            <a
-              href="https://linkedin.com"
-              target="_blank"
-              rel="noreferrer"
-              className="p-2 bg-white text-orange-500 rounded-full hover:bg-orange-400 transition"
-            >
-              <FaLinkedinIn />
-            </a>
-          </div>
         </div>
       </div>
 
       {/* Footer Bottom */}
       <div className="text-center mt-8 border-t border-orange-300 pt-4 text-sm relative z-10">
-        © {new Date().getFullYear()} SafeRide Bus Service. All Rights Reserved.
+        © {new Date().getFullYear()} Capital Bus Service. All Rights Reserved.
         |
         <a
           href="https://webcrafticx.com"

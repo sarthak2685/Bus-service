@@ -15,6 +15,7 @@ import Privacy from "./components/LandingPage/Privacy";
 import Refund from "./components/LandingPage/Refund";
 import Terms from "./components/LandingPage/Terms";
 import Preloader from "./components/LandingPage/Preloader";
+import ScrollToTop from "./components/LandingPage/ScrollToTop";
 import { useEffect, useState } from "react";
 
 function App() {
@@ -34,7 +35,7 @@ function App() {
       ) : (
 
       <Router>
-        {/* Set up Routes */}
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/add-user" element={<AddUser />} />

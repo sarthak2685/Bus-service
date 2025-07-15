@@ -34,6 +34,15 @@ const Invoice = () => {
   const token = S?.data?.token;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [invoiceId, setInvoiceId] = useState(null);
+
+    useEffect(() => {
+      const handleResize = () => {
+        setIsCollapsed(window.innerWidth < 768);
+      };
+      handleResize();
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }, []);
   
   useEffect(() => {
     fetch(`${config.apiUrl}/students/`, {
@@ -72,7 +81,7 @@ const Invoice = () => {
     }
   };
 
-console.log("Student Details:", studentDetails);
+// console.log("Student Details:", studentDetails);
   // Auto-calculate months
   useEffect(() => {
     if (startMonth && endMonth) {
@@ -100,11 +109,11 @@ console.log("Student Details:", studentDetails);
         }
       );
       const data = await response.json();
-      console.log("Last Paid Month Data:", data);
+      // console.log("Last Paid Month Data:", data);
   
       if (data?.next_date) {
         const lastPaid = new Date(data.next_date); 
-        console.log("Last Paid Month:", lastPaid);
+        // console.log("Last Paid Month:", lastPaid);
         lastPaid.setMonth(lastPaid.getMonth());
         const nextMonth = lastPaid.toISOString().slice(0, 7); // format "YYYY-MM"
         setStartMonth(nextMonth);
@@ -118,12 +127,12 @@ console.log("Student Details:", studentDetails);
 
   const downloadInvoice = useReactToPrint({
     content: () => {
-      console.log("Fetching invoice content...");
+      // console.log("Fetching invoice content...");
       return componentRef.current;
     },
     documentTitle: "Student_Invoice",
     onBeforeGetContent: () => {
-      console.log("Generating PDF...");
+      // console.log("Generating PDF...");
     },
   });
 

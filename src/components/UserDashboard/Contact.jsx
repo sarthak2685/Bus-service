@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "./SideBar";
 import UserHeader from "./UserHeader";
+import WhatsAppButton from "./WhatsAppButton";
 import {
     AiOutlineMail,
     AiOutlinePhone,
@@ -45,7 +46,7 @@ const Contact = () => {
         e.preventDefault();
         setLoading(true);
         setTimeout(() => {
-            console.log("Submitted Message: ", formData);
+            // console.log("Submitted Message: ", formData);
             toast.success("Message sent successfully!");
             setLoading(false);
             setFormData({ name: "", email: "", phone: "", message: "" });
@@ -61,6 +62,7 @@ const Contact = () => {
                 }`}
             >
                 <UserHeader toggleSidebar={toggleSidebar} />
+                <WhatsAppButton />
                 <div className="p-6 w-full bg-gray-100 min-h-screen">
                     <h2 className="text-3xl font-bold mb-6 text-gray-900">
                         Contact & Help
@@ -128,14 +130,20 @@ const Contact = () => {
                             <h3 className="text-3xl text-[#FF6F00] font-bold mb-4">
                                 Contact Information
                             </h3>
-                            <p className="flex items-center gap-2 font-semibold text-black mb-2">
+                            <a 
+                                href="mailto:capitalbuserv@gmail.com" 
+                                className="flex items-center gap-2 font-semibold text-black mb-2 hover:text-[#FF6F00] transition-colors duration-200"
+                            >
                                 <AiOutlineMail className="text-xl text-[#FFD166]" />
-                                Email: support@schoolbus.com
-                            </p>
-                            <p className="flex items-center gap-2 font-semibold text-black">
+                                Email: capitalbuserv@gmail.com
+                            </a>
+                            <a 
+                                href="tel:+919155286099" 
+                                className="flex items-center gap-2 font-semibold text-black hover:text-[#FF6F00] transition-colors duration-200"
+                            >
                                 <AiOutlinePhone className="text-xl text-[#FFD166]" />
-                                Phone: +91 9876543210
-                            </p>
+                                Phone: +91 91552 86099
+                            </a>
                         </div>
                     </div>
                 </div>

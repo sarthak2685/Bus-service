@@ -194,235 +194,225 @@ const AddDriver = () => {
   );
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <div className="flex flex-row flex-grow">
-        <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
-        <div
-          className={`flex-grow transition-all ${
-            isCollapsed ? "ml-0" : "ml-64"
-          }`}
-        >
-          <Header toggleSidebar={toggleSidebar} />
-          <div className="p-6 max-w-4xl mx-auto">
-            {/* Error Message */}
-            {error && (
-              <div
-                className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
-                role="alert"
-              >
-                <strong className="font-bold">Error: </strong>
-                <span className="block sm:inline">{error}</span>
-              </div>
-            )}
+<div className="flex flex-col min-h-screen">
+  <div className="flex flex-row flex-grow">
+    <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
+    <div
+      className={`flex-grow transition-all ${
+        isCollapsed ? "ml-0 md:ml-16" : "ml-0 md:ml-56"
+      }`}
+    >
+      <Header toggleSidebar={toggleSidebar} />
+      <div className="p-3 md:p-4 w-full mx-auto max-w-5xl">
+        {/* Error Message */}
+        {error && (
+          <div
+            className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded relative mb-3 text-xs md:text-sm"
+            role="alert"
+          >
+            <strong className="font-bold">Error: </strong>
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
 
-            {/* Driver Details Form */}
-            <div className="bg-white shadow-lg rounded-2xl p-8">
-              <h2 className="text-4xl font-extrabold text-gray-900 mb-8 text-center border-b pb-4">
-                Add Drivers
-              </h2>
+        {/* Driver Details Form */}
+        <div className="bg-white shadow-md rounded-lg md:rounded-xl p-3 md:p-4 mb-4">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 text-center border-b pb-2">
+            Add Drivers
+          </h2>
 
-              <div className="bg-gray-100 p-6 rounded-xl shadow-md">
-                <h2 className="text-2xl font-semibold text-gray-900 flex items-center mb-6">
-                  <span className="text-orange-500 text-3xl mr-2">📋</span>{" "}
-                  Driver Details
-                </h2>
-                <form onSubmit={handleAddDriver} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[
-                      {
-                        label: "Driver Name",
-                        name: "name",
-                        type: "text",
-                        placeholder: "Enter Name",
-                        icon: <FiUser />,
-                      },
-                      {
-                        label: "Route Name",
-                        name: "route",
-                        type: "select",
-                        placeholder: "Select Route",
-                        icon: <FiMapPin />,
-                      },
-                      {
-                        label: "Driver Contact",
-                        name: "contact",
-                        type: "text",
-                        placeholder: "Enter Contact",
-                        icon: <FiPhone />,
-                      },
-                      {
-                        label: "Vehicle Number",
-                        name: "vehicle_number",
-                        type: "text",
-                        placeholder: "Enter Vehicle Number",
-                        icon: <FiTruck />,
-                      },
-                    ].map((field, index) => (
-                      <div key={index}>
-                        <label className="block text-gray-700 font-medium mb-2">
-                          {field.label}
-                        </label>
-                        <div className="relative flex items-center border rounded-lg bg-gray-50 shadow-sm">
-                          <span className="absolute left-3 text-gray-500">
-                            {field.icon}
-                          </span>
-                          {field.name === "route" ? (
-                            <select
-                              name={field.name}
-                              value={newDriver.route}
-                              onChange={(e) => {
-                                const selectedRouteId = e.target.value;
-                                setNewDriver({
-                                  ...newDriver,
-                                  route: selectedRouteId, // Ensures route ID is set
-                                });
-                              }}
-                              className="w-full pl-10 pr-3 py-2 rounded-lg focus:ring-2 focus:ring-orange-400 focus:outline-none"
-                              disabled={routesLoading}
-                            >
-                              <option value="">
-                                {routesLoading
-                                  ? "Loading routes..."
-                                  : "Select Route"}
-                              </option>
-                              {routes.map((route) => (
-                                <option key={route.id} value={route.id}>
-                                  {route.name}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <input
-                              type="text"
-                              name={field.name}
-                              value={newDriver[field.name]}
-                              onChange={(e) =>
-                                setNewDriver({
-                                  ...newDriver,
-                                  [field.name]: e.target.value,
-                                })
-                              }
-                              className="w-full pl-10 pr-3 py-2 rounded-lg focus:ring-2 focus:ring-orange-400 focus:outline-none"
-                              placeholder={field.placeholder}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    ))}
+          <div className="bg-gray-50 p-3 rounded-lg shadow-sm">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-900 flex items-center mb-3">
+              <span className="text-orange-500 text-xl md:text-2xl mr-1">📋</span>
+              Driver Details
+            </h2>
+            <form onSubmit={handleAddDriver} className="space-y-3">
+              <div className="grid grid-cols-1 gap-3">
+                {[
+                  {
+                    label: "Driver Name",
+                    name: "name",
+                    type: "text",
+                    placeholder: "Enter Name",
+                    icon: <FiUser className="text-xs md:text-sm" />,
+                  },
+                  {
+                    label: "Route Name",
+                    name: "route",
+                    type: "select",
+                    placeholder: "Select Route",
+                    icon: <FiMapPin className="text-xs md:text-sm" />,
+                  },
+                  {
+                    label: "Driver Contact",
+                    name: "contact",
+                    type: "text",
+                    placeholder: "Enter Contact",
+                    icon: <FiPhone className="text-xs md:text-sm" />,
+                  },
+                  {
+                    label: "Vehicle Number",
+                    name: "vehicle_number",
+                    type: "text",
+                    placeholder: "Enter Vehicle Number",
+                    icon: <FiTruck className="text-xs md:text-sm" />,
+                  },
+                ].map((field, index) => (
+                  <div key={index} className="w-full">
+                    <label className="block text-gray-700 font-medium mb-1 text-xs md:text-sm">
+                      {field.label}
+                    </label>
+                    <div className="relative flex items-center border rounded-md bg-white">
+                      <span className="absolute left-2 text-gray-500">
+                        {field.icon}
+                      </span>
+                      {field.name === "route" ? (
+                        <select
+                          name={field.name}
+                          value={newDriver.route}
+                          onChange={(e) => {
+                            const selectedRouteId = e.target.value;
+                            setNewDriver({
+                              ...newDriver,
+                              route: selectedRouteId,
+                            });
+                          }}
+                          className="w-full pl-8 pr-2 py-1.5 rounded-md focus:ring-1 focus:ring-orange-400 focus:outline-none text-xs md:text-sm"
+                          disabled={routesLoading}
+                        >
+                          <option value="">
+                            {routesLoading
+                              ? "Loading..."
+                              : "Select Route"}
+                          </option>
+                          {routes.map((route) => (
+                            <option key={route.id} value={route.id}>
+                              {route.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type={field.type}
+                          name={field.name}
+                          value={newDriver[field.name]}
+                          onChange={(e) =>
+                            setNewDriver({
+                              ...newDriver,
+                              [field.name]: e.target.value,
+                            })
+                          }
+                          className="w-full pl-8 pr-2 py-1.5 rounded-md focus:ring-1 focus:ring-orange-400 focus:outline-none text-xs md:text-sm"
+                          placeholder={field.placeholder}
+                        />
+                      )}
+                    </div>
                   </div>
-                </form>
+                ))}
               </div>
-              <div className="flex justify-center mt-6">
+              <div className="flex justify-center pt-1">
                 <button
                   type="submit"
                   onClick={handleAddDriver}
-                  className="bg-orange-100 text-black px-6 py-3 rounded-lg flex items-center gap-2 hover:scale-105 transition-all duration-300 shadow-md"
+                  className="bg-orange-100 text-black px-3 py-1.5 rounded-md flex items-center gap-1 hover:scale-105 transition-all duration-200 shadow-sm text-xs md:text-sm"
                   disabled={isLoading}
                 >
-                  <FiSend /> {isLoading ? "Submitting..." : "Submit"}
+                  <FiSend className="text-xs md:text-sm" /> {isLoading ? "Submitting..." : "Submit"}
                 </button>
               </div>
-            </div>
+            </form>
+          </div>
+        </div>
 
-            {/* Driver List with Pagination */}
-            <div className="mt-10 bg-white shadow-lg rounded-2xl p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-semibold text-gray-900">
-                  Driver List
-                </h2>
-                <div className="relative">
-                  <input
-                    type="text"
-                    className="pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-400 focus:outline-none"
-                    placeholder="Search..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  <FiSearch className="absolute left-3 top-3 text-gray-500" />
-                </div>
-              </div>
-              {isLoading ? (
-                <div className="text-center py-4">Loading drivers...</div>
-              ) : (
-                <>
-                  <table className="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
-                    <thead>
-                      <tr className="bg-orange-100 text-gray-800">
-                        <th className="border border-gray-300 px-6 py-3">
-                          Name
-                        </th>
-                        <th className="border border-gray-300 px-6 py-3">
-                          Route
-                        </th>
-                        <th className="border border-gray-300 px-6 py-3">
-                          Contact
-                        </th>
-                        <th className="border border-gray-300 px-6 py-3">
-                          Vehicle Number
-                        </th>
-                        <th className="border border-gray-300 px-6 py-3">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedDrivers.map((driver) => (
-                        <tr
-                          key={driver.id}
-                          className="text-center bg-white hover:bg-gray-100 transition-all"
-                        >
-                          <td className="border border-gray-300 px-6 py-3">
-                            {driver.name}
-                          </td>
-                          <td className="border border-gray-300 px-6 py-3">
-                            {driver.route.name}
-                            {driver.route.amount && (
-                              <span className="block text-sm text-gray-500">
-                                Amount: {driver.route.amount || "N/A"}
-                              </span>
-                            )}
-                          </td>
-                          <td className="border border-gray-300 px-6 py-3">
-                            {driver.contact}
-                          </td>
-                          <td className="border border-gray-300 px-6 py-3">
-                            {driver.vehicle_number}
-                          </td>
-                          <td className="border border-gray-300 px-6 py-3">
-                            <button
-                              onClick={() => handleDelete(driver.id)}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <FiTrash2 />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {/* Pagination Controls */}
-                  <div className="flex justify-center mt-4 space-x-2">
-                    {[...Array(totalPages)].map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setCurrentPage(i + 1)}
-                        className={`px-4 py-2 rounded-lg ${
-                          currentPage === i + 1
-                            ? "bg-orange-400 text-white"
-                            : "bg-gray-300"
-                        }`}
-                      >
-                        {i + 1}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
+        {/* Driver List */}
+        <div className="bg-white shadow-md rounded-lg md:rounded-xl p-3 md:p-4">
+          <div className="flex flex-col space-y-2 md:space-y-0 md:flex-row md:justify-between md:items-center mb-3">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-900">
+              Driver List
+            </h2>
+            <div className="relative w-full md:w-48">
+              <input
+                type="text"
+                className="w-full pl-8 pr-2 py-1.5 border rounded-md focus:ring-1 focus:ring-orange-400 focus:outline-none text-xs md:text-sm"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <FiSearch className="absolute left-2 top-2 text-gray-500 text-xs md:text-sm" />
             </div>
           </div>
+          
+          {isLoading ? (
+            <div className="text-center py-3 text-xs md:text-sm">Loading drivers...</div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-orange-50 text-gray-800 text-xs md:text-sm">
+                      <th className="border p-1.5 md:p-2">Name</th>
+                      <th className="border p-1.5 md:p-2">Route</th>
+                      <th className="border p-1.5 md:p-2">Contact</th>
+                      <th className="border p-1.5 md:p-2">Vehicle</th>
+                      <th className="border p-1.5 md:p-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedDrivers.map((driver) => (
+                      <tr
+                        key={driver.id}
+                        className="text-center hover:bg-gray-50 text-xs md:text-sm"
+                      >
+                        <td className="border p-1.5 md:p-2">{driver.name}</td>
+                        <td className="border p-1.5 md:p-2">
+                          <div className="flex flex-col">
+                            <span>{driver.route.name}</span>
+                            {driver.route.amount && (
+                              <span className="text-xxs md:text-xs text-gray-500">
+                                ₹{driver.route.amount}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="border p-1.5 md:p-2">{driver.contact}</td>
+                        <td className="border p-1.5 md:p-2">{driver.vehicle_number}</td>
+                        <td className="border p-1.5 md:p-2">
+                          <button
+                            onClick={() => handleDelete(driver.id)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <FiTrash2 className="text-xs md:text-sm mx-auto" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Pagination */}
+              <div className="flex justify-center mt-3 space-x-1">
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`px-2 py-1 rounded text-xxs md:text-xs ${
+                      currentPage === i + 1
+                        ? "bg-orange-400 text-white"
+                        : "bg-gray-200"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
+  </div>
+</div>
   );
 };
 

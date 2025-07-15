@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "./SideBar";
 import UserHeader from "./UserHeader";
+import WhatsAppButton from "./WhatsAppButton";
 import {
     MdPayment,
     MdDateRange,
@@ -192,7 +193,7 @@ const Payments = () => {
         try {
             const storedUser = JSON.parse(localStorage.getItem("user"));
             const user = storedUser?.data?.user_data;
-            console.log("User Data of payment:", fromDate);
+            // console.log("User Data of payment:", fromDate);
             const payload = {
                 name: user.name,
                 father_name: user.fathers_name,
@@ -274,7 +275,7 @@ const Payments = () => {
 
             const result = await response.json();
             const student = result?.data?.[0];
-            console.log("Invoice Data:", result);
+            // console.log("Invoice Data:", result);
             const lastPaymentDate = result?.last_payment_date;
 
 if (lastPaymentDate) {
@@ -318,8 +319,8 @@ if (next) {
                     nextDate.getMonth() + 1,
                     0
                 );
-                console.log("Initial From Date:", initialFromDate);
-                console.log("Initial To Date:", initialToDate);
+                // console.log("Initial From Date:", initialFromDate);
+                // console.log("Initial To Date:", initialToDate);
             } else {
                 const now = new Date();
                 initialFromDate = new Date(
@@ -620,6 +621,7 @@ if (next) {
                 }`}
             >
                 <UserHeader toggleSidebar={toggleSidebar} />
+                <WhatsAppButton />
                 <div className="p-4 md:p-8 w-full bg-gray-100 min-h-screen">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl md:text-3xl font-semibold text-gray-900">
