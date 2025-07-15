@@ -6,10 +6,12 @@ import Gallery from './components/LandingPage/Gallery'
 import Contact from './components/LandingPage/Contact'
 import Footer from './components/LandingPage/Footer'
 import Features from './components/LandingPage/Features'
+import WhatsAppButton from './components/LandingPage/WhatsAppButton'
 
 function Home() {
   return (
     <>
+    <WhatsAppButton/>
     <Navbar />
     <Hero />
     <About />

@@ -10,6 +10,7 @@ import {
 } from "react-icons/md";
 import { AiOutlineCheck, AiOutlineClose } from "react-icons/ai";
 import config from "../Config";
+import WhatsAppButton from "./WhatsAppButton";
 
 const DashboardHome = () => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -129,21 +130,23 @@ Arrival Time: ${busInfo.arrivalTime}
             >
                 <UserHeader toggleSidebar={toggleSidebar} />
 
+                <WhatsAppButton/>
+
                 <div className="p-8 bg-gray-50 min-h-screen w-full">
                     <div className="flex justify-between items-center mb-8">
                         <h2 className="text-3xl font-bold text-gray-900">
                             Dashboard Overview
                         </h2>
-                        <button
-                            className="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors duration-300 flex items-center gap-2"
-                            onClick={sendSOSMessage}
-                            disabled={isSending}
-                        >
-                            <MdNotificationsActive className="text-xl" />
-                            <span>
-                                {isSending ? "Sending..." : "Emergency SOS"}
-                            </span>
-                        </button>
+                       <button
+    className="px-4 py-2 md:px-6 md:py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors duration-300 flex items-center gap-1 md:gap-2"
+    onClick={sendSOSMessage}
+    disabled={isSending}
+>
+    <MdNotificationsActive className="text-lg md:text-xl" />
+    <span className="text-sm md:text-base">
+        {isSending ? "Sending..." : "Emergency SOS"}
+    </span>
+</button>
                     </div>
 
                     <div className="bg-white rounded-lg shadow-sm">
