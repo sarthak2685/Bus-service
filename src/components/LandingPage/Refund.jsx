@@ -53,10 +53,9 @@ const Refund = () => {
               href="mailto:info@capitalservice.com"
               className="text-blue-600 ml-1 hover:underline"
             >
-              info@capitalservice.com
-            </a>
+              capitalbuserv@gmail.com            </a>
           </p>
-          <p className="text-gray-700 mt-2">📱 Phone: 📞 +91 82105 84092</p>
+          <p className="text-gray-700 mt-2">📱 Phone: 📞 +91 9155286099</p>
         </div>
 
         <footer className="mt-12 text-center">

@@ -20,7 +20,7 @@ const Footer = () => {
         {/* Company Info */}
         <div>
           <h2 className="text-2xl font-bold mb-4 text-orange-500">
-            Bus Service
+            Capital Bus Service
           </h2>
           <p className="text-sm leading-relaxed">
             Dedicated to providing safe, reliable, and efficient transportation
@@ -96,11 +96,10 @@ const Footer = () => {
               <FaMapMarkerAlt className="mr-2" /> 123 School Lane, City, Country
             </li> */}
             <li className="flex items-center">
-              <FaPhoneAlt className="mr-2" /> +91 82105 84092
+              <FaPhoneAlt className="mr-2" /> +91 9155286099
             </li>
             <li className="flex items-center">
-              <FaEnvelope className="mr-2" /> info@capitalservice.com
-            </li>
+              <FaEnvelope className="mr-2" /> capitalbuserv@gmail.com            </li>
           </ul>
 
           {/* Social Media */}

@@ -83,11 +83,11 @@ const Contact = () => {
           </p>
           <div className="flex items-center mb-3 text-gray-700">
             <FaPhoneAlt className="text-orange-500 mr-3" />
-            <span>+91 82105 84092</span>
+            <span>+91 9155286099</span>
           </div>
           <div className="flex items-center mb-3 text-gray-700">
             <FaEnvelope className="text-orange-500 mr-3" />
-            <span>contact@capitalservice.com</span>
+            <span>capitalbuserv@gmail.com</span>
           </div>
         </div>
 

@@ -142,7 +142,7 @@ const Navbar = () => {
       >
         <div className="container mx-auto flex justify-between items-center px-0 lg:px-12 ">
           <div className="text-2xl font-extrabold tracking-wide cursor-pointer">
-            School Bus Service
+            Capital Bus Service
           </div>
 
           <div className="md:hidden">
@@ -167,18 +167,14 @@ const Navbar = () => {
             </button>
           </div>
 
-          <div
-            className={`md:flex md:items-center md:space-x-8 absolute md:static top-16 left-52 w-[45%] bg-slate-50 md:bg-transparent shadow-md md:shadow-none md:w-auto md:block transition-all duration-300 ${
-              isOpen ? "block" : "hidden"
-            }`}
-          >
-            <ul className="md:flex md:space-x-6 text-sm md:text-lg flex flex-col md:flex-row justify-center items-center">
+          <div className="hidden md:flex md:items-center md:space-x-8">
+            <ul className="md:flex md:space-x-6 text-sm md:text-lg">
               {["home", "about", "gallery", "contact"].map((section) => (
-                <li key={section} className="text-center md:text-left w-24">
+                <li key={section}>
                   <a
                     href={`#${section}`}
                     onClick={() => setActiveSection(section)}
-                    className={`block py-2 px-6 md:px-5transition duration-300  rounded-full ${
+                    className={`block py-2 px-6 md:px-5 transition duration-300 rounded-full ${
                       activeSection === section
                         ? "bg-orange-500 text-white rounded-full border border-orange-500"
                         : "border-orange-500 text-orange-500"
@@ -190,16 +186,53 @@ const Navbar = () => {
               ))}
             </ul>
 
-            <div className="text-center md:text-left mt-3 md:mt-0">
-              <button
-                onClick={handleLoginClick}
-                className="bg-orange-500 text-white py-2 px-6 rounded-full transition duration-300 hover:bg-orange-600"
-              >
-                Login
-              </button>
-            </div>
+            <button
+              onClick={handleLoginClick}
+              className="bg-orange-500 text-white py-2 px-6 rounded-full transition duration-300 hover:bg-orange-600"
+            >
+              Login
+            </button>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isOpen && (
+          <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-md z-50 border-t border-gray-100">
+            <div className="container mx-auto px-4 py-2">
+              <ul className="space-y-2">
+                {["home", "about", "gallery", "contact"].map((section) => (
+                  <li key={section}>
+                    <a
+                      href={`#${section}`}
+                      onClick={() => {
+                        setActiveSection(section);
+                        setIsOpen(false);
+                      }}
+                      className={`block py-2 px-3 text-sm transition duration-200 rounded-md ${
+                        activeSection === section
+                          ? "bg-orange-500 text-white"
+                          : "text-orange-500 hover:bg-orange-50"
+                      }`}
+                    >
+                      {section.charAt(0).toUpperCase() + section.slice(1)}
+                    </a>
+                  </li>
+                ))}
+                <li className="pt-1">
+                  <button
+                    onClick={() => {
+                      handleLoginClick();
+                      setIsOpen(false);
+                    }}
+                    className="w-full text-orange-500  py-2 px-3 text-left text-sm rounded-md transition duration-200 hover:bg-orange-600"
+                  >
+                    Login
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Modal */}
