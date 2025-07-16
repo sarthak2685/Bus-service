@@ -61,7 +61,9 @@ const Invoice = () => {
     const studentId = e.target.value;
     setSelectedStudent(studentId);
     const student = students.find((s) => s.id === studentId);
+
     if (student) {
+      // console.log(student)
       setStudentDetails({
         name: student.name,
         class: student.student_class,
@@ -76,7 +78,7 @@ const Invoice = () => {
       });
       setLateFees(0);
 
-      fetchLastPaidMonth(student.id, student.contact_number);
+      fetchLastPaidMonth(student.id, student.phone_number);
 
     }
   };
@@ -97,6 +99,7 @@ const Invoice = () => {
   const grandTotal = studentDetails.busFee * months + lateFees;
 
   const fetchLastPaidMonth = async (studentId, mobile) => {
+    // console.log("Fetching last paid month for student:", studentId, "with mobile:", mobile);
     try {
       const response = await fetch(
         `${config.apiUrl}/get-invoice/?id=${studentId}&mobile_no=${mobile}`,
@@ -164,7 +167,7 @@ const formatEndDate = (ym) => {
     const payload = {
       name: studentDetails.name,
       father_name: studentDetails.fatherName,
-      mobile: studentDetails.contact,
+      mobile: studentDetails.phone,
       route: studentDetails.routeName,
       driver: studentDetails.driverName,
       start_month: formatStartDate(startMonth),
@@ -353,7 +356,7 @@ doc.line(15, y + 10, 195, y + 10); // From x=15 to x=195 at y+10
               {/* Student Details Display */}
               <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <p className="truncate sm:whitespace-normal break-words"><span>Father Name:</span> {studentDetails.fatherName || "---"}</p>
-                <p className="truncate sm:whitespace-normal break-words"><span>Mobile:</span> {studentDetails.contact || "---"}</p>
+                <p className="truncate sm:whitespace-normal break-words"><span>Mobile:</span> {studentDetails.phone || "---"}</p>
                 <p className="truncate sm:whitespace-normal break-words"><span>Route:</span> {studentDetails.routeName || "---"}</p>
                 <p className="truncate sm:whitespace-normal break-words"><span>Driver:</span> {studentDetails.driverName || "---"}</p>
               </div>
