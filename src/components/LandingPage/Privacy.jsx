@@ -91,7 +91,7 @@ const Privacy = () => {
               href="mailto:info@capitalservice.com"
               className="text-blue-600 ml-1 hover:underline"
             >
-              capitalbuserv@gmail.com
+              capitalbusserv@gmail.com
             </a>
           </p>
         </div>
@@ -122,7 +122,7 @@ const Privacy = () => {
               href="mailto:info@capitalservice.com"
               className="text-blue-600 ml-1 hover:underline"
             >
-              capitalbuserv@gmail.com
+              capitalbusserv@gmail.com
             </a>
           </p>
           <p className="text-gray-700 mt-2">📱 Phone: 📞 +91 9155286099</p>

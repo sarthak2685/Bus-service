@@ -21,8 +21,6 @@ const Payments = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [monthlyFee, setMonthlyFee] = useState(0);
-    const [lastPaymentDate, setLastPaymentDate] = useState("");
-    const [nextDueDate, setNextDueDate] = useState("");
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [paymentHistory, setPaymentHistory] = useState([]);
     const [paymentError, setPaymentError] = useState(null);
@@ -32,16 +30,8 @@ const Payments = () => {
 
     const token = JSON.parse(localStorage.getItem("user"))?.data?.token;
 
-    const [fromDate, setFromDate] = useState(() => {
-        const date = new Date();
-        return new Date(date.getFullYear(), date.getMonth(), 1);
-    });
-
-    const [toDate, setToDate] = useState(() => {
-        const date = new Date();
-        return new Date(date.getFullYear(), date.getMonth() + 1, 0);
-    });
-
+    const [fromDate, setFromDate] = useState(new Date());
+    const [toDate, setToDate] = useState(new Date());
     const [totalMonths, setTotalMonths] = useState(1);
 
     const [formData, setFormData] = useState({
@@ -183,17 +173,19 @@ const Payments = () => {
         // Save PDF
         doc.save(`Invoice_${data.name}_${data.start_month}.pdf`);
     };
+
     const formatLocalDate = (date) => {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
-      };  
-        const handleGenerateInvoice = async (paymentData) => {
+    };
+
+    const handleGenerateInvoice = async (paymentData) => {
         try {
             const storedUser = JSON.parse(localStorage.getItem("user"));
             const user = storedUser?.data?.user_data;
-            // console.log("User Data of payment:", fromDate);
+            
             const payload = {
                 name: user.name,
                 father_name: user.fathers_name,
@@ -275,106 +267,44 @@ const Payments = () => {
 
             const result = await response.json();
             const student = result?.data?.[0];
-            // console.log("Invoice Data:", result);
-            const lastPaymentDate = result?.last_payment_date;
+            
+            // Format last payment date
+            if (result.last_payment_date) {
+                const dateObj = new Date(result.last_payment_date);
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const year = dateObj.getFullYear();
+                setLastPayment(`${day}/${month}/${year}` || null);
+            }
 
-if (lastPaymentDate) {
-  const dateObj = new Date(lastPaymentDate);
-  
-  // Extract day, month, year (local time)
-  const day = String(dateObj.getDate()).padStart(2, '0'); // Ensure 2 digits (e.g., "01")
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
-  const year = dateObj.getFullYear();
-
-  const formattedDate = `${day}/${month}/${year}`;
-  setLastPayment(formattedDate|| null);
-
-}
-const next = result?.next_date;
-
-if (next) {
-  const dateObj = new Date(next);
-  
-  // Extract day, month, year (local time)
-  const day = String(dateObj.getDate()).padStart(2, '0'); // Ensure 2 digits (e.g., "01")
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
-  const year = dateObj.getFullYear();
-
-  const formattedDate = `${day}/${month}/${year}`;
-  setNextDate(formattedDate|| null);
-
-}
-            // Initialize dates based on API response
-            let initialFromDate, initialToDate;
-
+            // Format next payment date and set dates
             if (result.next_date) {
-                const nextDate = new Date(result.next_date);
-                initialFromDate = new Date(
-                    nextDate.getFullYear(),
-                    nextDate.getMonth(),
-                    1
-                );
-                initialToDate = new Date(
-                    nextDate.getFullYear(),
-                    nextDate.getMonth() + 1,
-                    0
-                );
-                // console.log("Initial From Date:", initialFromDate);
-                // console.log("Initial To Date:", initialToDate);
-            } else {
-                const now = new Date();
-                initialFromDate = new Date(
-                    now.getFullYear(),
-                    now.getMonth(),
-                    1
-                );
-                initialToDate = new Date(
-                    now.getFullYear(),
-                    now.getMonth() + 1,
-                    0
-                );
+                const dateObj = new Date(result.next_date);
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const year = dateObj.getFullYear();
+                setNextDate(`${day}/${month}/${year}` || null);
+                
+                // Set fromDate to the 1st day of next payment month
+                const initialFromDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), 1);
+                setFromDate(initialFromDate);
+                
+                // Set toDate to the last day of the same month
+                const initialToDate = new Date(dateObj.getFullYear(), dateObj.getMonth() + 1, 0);
+                setToDate(initialToDate);
+                
+                // Calculate months and amount
+                const months = calculateMonthDiff(initialFromDate, initialToDate);
+                setTotalMonths(months);
             }
 
             // Set payment history
             if (result.last_payment && result.last_payment.length > 0) {
                 setPaymentHistory(result.last_payment);
-
-                // For last payment display (single card)
-                const lastPayment = result.last_payment_date;
-                const start = new Date(lastPayment.start_month);
-                const formattedStart = lastPayment.toLocaleDateString("en-IN", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                });
-                setLastPaymentDate(
-                    `${formattedStart} (₹ ${lastPayment.grand_total})`
-                );
             }
-
-            // Set next due date if available
-            if (result.next_date) {
-                const nextDue = new Date(result.next_date);
-                setNextDueDate(
-                    nextDue.toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                    })
-                );
-            }
-
-            // Set the dates and calculate months
-            setFromDate(initialFromDate);
-            setToDate(initialToDate);
-            const months = calculateMonthDiff(initialFromDate, initialToDate);
-            setTotalMonths(months);
 
             // Set fee and form data
-            const busFee =
-                parseInt(result.bus_fee) ||
-                parseInt(user?.driver?.route?.amount) ||
-                0;
+            const busFee = parseInt(result.bus_fee) || parseInt(user?.driver?.route?.amount) || 0;
             setMonthlyFee(busFee);
 
             if (student) {
@@ -386,11 +316,7 @@ if (next) {
                     phone: student.phone_number || "",
                     fatherName: student.fathers_name || "",
                     route: student?.driver?.route?.name || "",
-                    amount: calculateAmount(
-                        initialFromDate,
-                        initialToDate,
-                        busFee
-                    ),
+                    amount: calculateAmount(fromDate, toDate, busFee),
                 }));
             }
         } catch (err) {
@@ -406,14 +332,6 @@ if (next) {
             const fee = parseInt(user?.driver?.route?.amount) || 0;
             setMonthlyFee(fee);
 
-            const initialFromDate = new Date();
-            initialFromDate.setDate(1);
-            const initialToDate = new Date(
-                initialFromDate.getFullYear(),
-                initialFromDate.getMonth() + 1,
-                0
-            );
-
             setFormData((prev) => ({
                 ...prev,
                 name: user?.name || "",
@@ -422,7 +340,7 @@ if (next) {
                 phone: user?.phone_number || "",
                 fatherName: user?.fathers_name || "",
                 route: user?.driver?.route?.name || "",
-                amount: calculateAmount(initialFromDate, initialToDate, fee),
+                amount: calculateAmount(fromDate, toDate, fee),
             }));
         };
 
@@ -746,7 +664,7 @@ if (next) {
                                                     className="border border-[#FFF3E0]"
                                                 >
                                                     <td className="p-2 md:p-3">
-                                                        {paymentDate}
+                                                       {payment.created_at?.split("T")[0]}
                                                     </td>
                                                     <td className="p-2 md:p-3 text-green-700 font-medium">
                                                         ₹{payment.grand_total}
