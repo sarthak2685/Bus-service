@@ -1,16 +1,21 @@
-import React, { useState } from "react";
-import { FaPhoneAlt, FaEnvelope, FaMapMarkerAlt } from "react-icons/fa";
-import config from "../Config";
+import React, { useState, useEffect } from "react";
+import { FaPhoneAlt, FaEnvelope } from "react-icons/fa";
+import emailjs from '@emailjs/browser';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    phone_number: "",
+    number: "",
     message: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
+
+  // Initialize EmailJS when component mounts
+  useEffect(() => {
+    emailjs.init('ogUx0NT98KbPRK6QJ');
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,16 +31,13 @@ const Contact = () => {
     setSubmitStatus(null);
 
     try {
-      const response = await fetch(`${config.apiUrl}/contact/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Token 5805278e147b5589a6ee7fdffe1dd0ab0033d206` 
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await emailjs.send(
+        'service_03kz58b', // Your service ID
+        'template_739o0hg', // Your template ID
+        formData
+      );
 
-      if (response.ok) {
+      if (response.status === 200) {
         setSubmitStatus({
           success: true,
           message: 'Message sent successfully! We will get back to you soon.'
@@ -43,14 +45,14 @@ const Contact = () => {
         setFormData({
           name: "",
           email: "",
-          phone_number: "",
+          number: "",
           message: ""
         });
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send message');
+        throw new Error('Failed to send message');
       }
     } catch (error) {
+      console.error('EmailJS Error:', error);
       setSubmitStatus({
         success: false,
         message: error.message || 'An error occurred while sending your message. Please try again.'
@@ -87,7 +89,7 @@ const Contact = () => {
           </div>
           <div className="flex items-center mb-3 text-gray-700">
             <FaEnvelope className="text-orange-500 mr-3" />
-            <span>capitalbuserv@gmail.com</span>
+            <span>capitalbusserv@gmail.com</span>
           </div>
         </div>
 
@@ -113,11 +115,11 @@ const Contact = () => {
           />
           <input
             type="tel"
-            name="phone_number"
+            name="number"
             placeholder="Your Number"
             className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
             required
-            value={formData.phone_number}
+            value={formData.number}
             onChange={handleChange}
           />
           <textarea

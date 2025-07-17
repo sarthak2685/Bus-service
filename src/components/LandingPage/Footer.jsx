@@ -88,8 +88,8 @@ const Footer = () => {
               </a>
             </li>
             <li className="flex items-center">
-              <a href="mailto:capitalbuserv@gmail.com" className="flex items-center hover:text-orange-500">
-                <FaEnvelope className="mr-2" /> capitalbuserv@gmail.com
+              <a href="mailto:capitalbusserv@gmail.com" className="flex items-center hover:text-orange-500">
+                <FaEnvelope className="mr-2" /> capitalbusserv@gmail.com
               </a>
             </li>
           </ul>
