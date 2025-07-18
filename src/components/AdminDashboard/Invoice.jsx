@@ -89,9 +89,17 @@ const Invoice = () => {
     if (startMonth && endMonth) {
       const start = new Date(startMonth);
       const end = new Date(endMonth);
-      let diffMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())+1;
-
-      // Ensure minimum value is 1
+      
+      // Additional validation
+      if (end < start) {
+        setEndMonth(startMonth); // Reset to start month if invalid
+        alert("End month cannot be before start month");
+        return;
+      }
+      
+      let diffMonths = (end.getFullYear() - start.getFullYear()) * 12 + 
+                       (end.getMonth() - start.getMonth()) + 1;
+  
       setMonths(diffMonths > 0 ? diffMonths : 1);
     }
   }, [startMonth, endMonth]);
@@ -315,7 +323,7 @@ doc.line(15, y + 10, 195, y + 10); // From x=15 to x=195 at y+10
   const handleWhatsAppShare = () => {
     const message = `📜 *CAPITAL BUS SERVICE*\n*Invoice*\n------------------\n👨‍🎓 *Student:* ${studentDetails.name}
   👪 *Parent:* ${studentDetails.fatherName}
-  📞 *Mobile:* ${studentDetails.contact}
+  📞 *Mobile:* ${studentDetails.phone}
   🚌 *Route:* ${studentDetails.routeName}
   👷 *Driver:* ${studentDetails.driverName}
   📅 *Duration:* ${startMonth} to ${endMonth}
@@ -325,7 +333,7 @@ doc.line(15, y + 10, 195, y + 10); // From x=15 to x=195 at y+10
   💳 *Payment Mode:* ${paymentMethod}
   *Thanks For Choosing Us!!*`;
   
-    const whatsappURL = `https://wa.me/+91${studentDetails.contact}?text=${encodeURIComponent(message)}`;
+    const whatsappURL = `https://wa.me/+91${studentDetails.phone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappURL, "_blank");
   };
   
@@ -370,9 +378,23 @@ doc.line(15, y + 10, 195, y + 10); // From x=15 to x=195 at y+10
                   <input type="month" value={startMonth} readOnly onChange={(e) => setStartMonth(e.target.value)} className="border p-2 rounded w-full" />
                 </div>
                 <div>
-                  <label className="block text-gray-700 font-medium">End Month</label>
-                  <input type="month" value={endMonth} onChange={(e) => setEndMonth(e.target.value)} className="border p-2 rounded w-full" />
-                </div>
+  <label className="block text-gray-700 font-medium">End Month</label>
+  <input 
+    type="month" 
+    value={endMonth} 
+    onChange={(e) => {
+      const selectedEndMonth = e.target.value;
+      if (startMonth && selectedEndMonth < startMonth) {
+        // Show error or prevent selection
+        alert("End month cannot be before start month");
+        return;
+      }
+      setEndMonth(selectedEndMonth);
+    }} 
+    min={startMonth} // This will prevent selecting earlier months in the browser UI
+    className="border p-2 rounded w-full" 
+  />
+</div>
                 <div>
                   <label className="block text-gray-700 font-medium">Months</label>
                   <input type="number" value={months} readOnly className="border p-2 rounded w-full" />
