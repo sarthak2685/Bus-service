@@ -11,6 +11,8 @@ import {
 import { AiOutlineCheck, AiOutlineClose } from "react-icons/ai";
 import config from "../Config";
 import WhatsAppButton from "./WhatsAppButton";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const DashboardHome = () => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -52,9 +54,67 @@ const DashboardHome = () => {
         setTempEmergencyContact(e.target.value);
     };
 
-    const saveEmergencyContact = () => {
-        setUserInfo({ ...userInfo, emergencyContact: tempEmergencyContact });
+    const saveEmergencyContact = async () => {
+        const updatedContact = tempEmergencyContact;
         setIsEditing(false);
+
+        try {
+            const uuid = userData.id;
+            if (!uuid) throw new Error("User ID not found");
+
+            const payload = {
+                name: userData.name,
+                student_class: userData.student_class,
+                student_section: userData.student_section,
+                phone_number: userData.phone_number,
+                fathers_name: userData.fathers_name,
+                bus_arrival_time: userData.bus_arrival_time,
+                contact_number: updatedContact,
+                driver_id: userData.driver?.id || null,
+            };
+
+            console.log("PUT Payload:", payload);
+
+            const response = await fetch(`${config.apiUrl}/students/${uuid}/`, {
+                method: "PUT",
+                headers: {
+                    Authorization: `Token ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("Validation errors:", errorData);
+                throw new Error("Failed to update emergency contact");
+            }
+
+            const responseData = await response.json();
+
+            setUserInfo((prev) => ({
+                ...prev,
+                emergencyContact: updatedContact,
+            }));
+
+            const updatedUserData = {
+                ...userData,
+                contact_number: updatedContact,
+            };
+            const updatedStoredUser = {
+                ...storedUser,
+                data: {
+                    ...storedUser.data,
+                    user_data: updatedUserData,
+                },
+            };
+            localStorage.setItem("user", JSON.stringify(updatedStoredUser));
+
+            toast.success("Emergency contact updated successfully!");
+        } catch (error) {
+            console.error("Update error:", error);
+            toast.error("Failed to update emergency contact.");
+        }
     };
 
     const toggleSidebar = () => setIsCollapsed((prev) => !prev);
@@ -68,13 +128,13 @@ const DashboardHome = () => {
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-const sendSOSMessage = async () => {
-    setIsSending(true);
-    
-    try {
-        const adminPhone = "+918981516960"; // Admin phone number
+    const sendSOSMessage = async () => {
+        setIsSending(true);
 
-        const emergencyMessage = `🚨 EMERGENCY ALERT 🚨
+        try {
+            const adminPhone = "+918981516960"; // Admin phone number
+
+            const emergencyMessage = `🚨 EMERGENCY ALERT 🚨
             
 Student: ${userInfo.childName}
 Class: ${userInfo.class}-${userInfo.section}
@@ -90,39 +150,43 @@ Arrival Time: ${busInfo.arrivalTime}
 
 ⚠️ Immediate attention required! Parent has pressed the SOS button in the app.`;
 
-        // Using GET request with encoded parameters
-        const response = await fetch(
-            `${config.apiUrl}/send-msg/sos/?mobile_no=${encodeURIComponent(adminPhone)}&msg=${encodeURIComponent(emergencyMessage)}`,
-            {
-                method: "GET",
-                headers: {
-                    Authorization: `Token ${token}`,
-                    "Content-Type": "application/json",
-                },
+            // Using GET request with encoded parameters
+            const response = await fetch(
+                `${config.apiUrl}/send-msg/sos/?mobile_no=${encodeURIComponent(
+                    adminPhone
+                )}&msg=${encodeURIComponent(emergencyMessage)}`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Token ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to send SOS message");
             }
-        );
 
-        if (!response.ok) {
-            throw new Error("Failed to send SOS message");
+            const data = await response.json();
+            if (data.success) {
+                alert("Emergency alert has been sent to admin!");
+            } else {
+                throw new Error(data.message || "Failed to send SOS message");
+            }
+        } catch (error) {
+            console.error("Error sending SOS:", error);
+            alert("Failed to send emergency alert. Please try again.");
+        } finally {
+            setIsSending(false);
         }
-
-        const data = await response.json();
-        if (data.success) {
-            alert("Emergency alert has been sent to admin!");
-        } else {
-            throw new Error(data.message || "Failed to send SOS message");
-        }
-    } catch (error) {
-        console.error("Error sending SOS:", error);
-        alert("Failed to send emergency alert. Please try again.");
-    } finally {
-        setIsSending(false);
-    }
-};
+    };
 
     return (
         <>
             <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
+            <ToastContainer position="top-center" autoClose={3000} />
+
             <div
                 className={`flex-grow transition-all ${
                     isCollapsed ? "ml-0" : "ml-64"
@@ -130,23 +194,23 @@ Arrival Time: ${busInfo.arrivalTime}
             >
                 <UserHeader toggleSidebar={toggleSidebar} />
 
-                <WhatsAppButton/>
+                <WhatsAppButton />
 
                 <div className="p-8 bg-gray-50 min-h-screen w-full">
                     <div className="flex justify-between items-center mb-8">
                         <h2 className="text-3xl font-bold text-gray-900">
                             Dashboard Overview
                         </h2>
-                       <button
-    className="px-4 py-2 md:px-6 md:py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors duration-300 flex items-center gap-1 md:gap-2"
-    onClick={sendSOSMessage}
-    disabled={isSending}
->
-    <MdNotificationsActive className="text-lg md:text-xl" />
-    <span className="text-sm md:text-base">
-        {isSending ? "Sending..." : "Emergency SOS"}
-    </span>
-</button>
+                        <button
+                            className="px-4 py-2 md:px-6 md:py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors duration-300 flex items-center gap-1 md:gap-2"
+                            onClick={sendSOSMessage}
+                            disabled={isSending}
+                        >
+                            <MdNotificationsActive className="text-lg md:text-xl" />
+                            <span className="text-sm md:text-base">
+                                {isSending ? "Sending..." : "Emergency SOS"}
+                            </span>
+                        </button>
                     </div>
 
                     <div className="bg-white rounded-lg shadow-sm">
