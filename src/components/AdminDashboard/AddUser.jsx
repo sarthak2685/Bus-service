@@ -452,7 +452,7 @@ const AddUser = () => {
                       className="w-full pl-9 pr-3 py-2 text-sm md:text-base rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
                       value={selectedRoute}
                       onChange={(e) => setSelectedRoute(e.target.value)}
-                      disabled={!selectedDriver}
+                      disabled
                       required
                     >
                       <option value="">Select Route</option>
