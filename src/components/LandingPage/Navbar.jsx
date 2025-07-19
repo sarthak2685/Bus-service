@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import config from "../Config";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,6 +15,7 @@ const Navbar = () => {
   const [phoneError, setPhoneError] = useState("");
   const User = JSON.parse(localStorage.getItem("user"));
   const UserDetail = User?.data;
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -140,9 +142,9 @@ const Navbar = () => {
         closeModal();
         
         if (data.data.type === "admin") {
-          window.location.href = "/add-user";
+          navigate("/add-user");
         } else if (data.data.type === "student") {
-          window.location.href = "/UserDashboard";
+          navigate("/UserDashboard");
         }
       } else {
         toast.error("Invalid credentials!", {
@@ -167,6 +169,10 @@ const Navbar = () => {
     }
   };
 
+  const navigateToHome = () => {
+    navigate("/");
+  };
+
   return (
     <>
       <nav
@@ -175,7 +181,10 @@ const Navbar = () => {
         }`}
       >
         <div className="container mx-auto flex justify-between items-center px-0 lg:px-12 ">
-          <div className="text-2xl font-extrabold tracking-wide cursor-pointer">
+          <div 
+            className="text-2xl font-extrabold tracking-wide cursor-pointer"
+            onClick={navigateToHome}
+          >
             Capital Bus Service
           </div>
 
