@@ -4,7 +4,7 @@ import { BsWhatsapp } from 'react-icons/bs';
 const WhatsAppButton = () => {
   const openWhatsApp = () => {
     const phoneNumber = '919155286099';
-    const message = 'Hello, I have questions about your bus services. Could you please provide information about:\n\n- Available routes and schedules\n- Ticket prices\n- Amenities on board\n- Booking process\n\nThank you!';
+    const message = 'Hello, I have questions about your bus services. Could you please provide information about:\n\n- Available routes and schedules\n- Fee prices\n- Booking process\n\nThank you!';
     const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
