@@ -11,8 +11,10 @@ const Navbar = () => {
   const [userType, setUserType] = useState(null); // 'admin' or 'parent'
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const User = JSON.parse(localStorage.getItem("user"));
   const UserDetail = User?.data;
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -23,9 +25,10 @@ const Navbar = () => {
   }, []);
 
   const handlePhoneNumberChange = async (e) => {
-    const inputNumber = e.target.value;
+    const inputNumber = e.target.value.replace(/\D/g, ''); // Remove non-digit characters
     setPhoneNumber(inputNumber);
-  
+    setPhoneError(""); // Clear any previous error
+
     if (inputNumber.length === 10) {
       try {
         const response = await fetch(
@@ -34,20 +37,26 @@ const Navbar = () => {
             headers: { "Content-Type": "application/json" },
           }
         );
+        
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        
         const data = await response.json();
-  
+
         if (data?.type) {
           setUserType(data.type);
-          // console.log("role", data.type);
-  
+          setPhoneError(""); // Clear error if number is valid
+
           if (data.type === "parent") {
             // Send OTP immediately
             await fetch(`${config.apiUrl}/send-otp/`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ phone: Number(inputNumber),
-                phone_2: "91" + Number(inputNumber)  // Assuming you want to send OTP to the same number
-               }),
+              body: JSON.stringify({ 
+                phone: Number(inputNumber),
+                phone_2: "91" + Number(inputNumber)
+              }),
             });
             
             toast.info("OTP sent to your number", {
@@ -57,16 +66,26 @@ const Navbar = () => {
           }
         } else {
           setUserType(null);
-          alert("Phone number not found.");
+          setPhoneError("This phone number is not registered with us");
+          toast.error("Phone number not found", {
+            position: "top-right",
+            autoClose: 2000,
+          });
         }
       } catch (error) {
-        console.error("Error verifying phone number:", error);
+        console.error("Try verified phone number", error);
+        setPhoneError("Try verified phone number. Please try again.");
+        toast.error("Try verified phone number", {
+          position: "top-right",
+          autoClose: 2000,
+        });
       }
+    } else if (inputNumber.length > 10) {
+      setPhoneNumber(inputNumber.slice(0, 10)); // Limit to 10 digits
     } else {
       setUserType(null); // Reset if the number is not 10 digits
     }
   };
-  
 
   const handleLoginClick = () => {
     setShowModal(true);
@@ -78,9 +97,19 @@ const Navbar = () => {
     setUserType(null);
     setPassword("");
     setOtp("");
+    setPhoneError("");
   };
 
   const handleLogin = async () => {
+    if (!phoneNumber || phoneNumber.length !== 10) {
+      setPhoneError("Please enter a valid 10-digit phone number");
+      return;
+    }
+
+    if (phoneError) {
+      return; // Don't proceed if there's a phone error
+    }
+
     const payload = { mobileno: Number(phoneNumber) };
     if (userType === "admin") payload.password = password;
     if (userType === "parent") payload.password = otp;
@@ -91,10 +120,15 @@ const Navbar = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      
       const data = await response.json();
-      // console.log("JSON response", data);
+      
       if (data.status === true) {
-        toast.success("Login successfully!", {
+        toast.success("Login successful!", {
           position: "top-right",
           autoClose: 2000,
           hideProgressBar: false,
@@ -103,15 +137,15 @@ const Navbar = () => {
           draggable: true,
         });
         localStorage.setItem("user", JSON.stringify(data));
-        // console.log("user", data.data);
         closeModal();
+        
         if (data.data.type === "admin") {
           window.location.href = "/add-user";
         } else if (data.data.type === "student") {
           window.location.href = "/UserDashboard";
         }
       } else {
-        toast.error("Invalid Credential!", {
+        toast.error("Invalid credentials!", {
           position: "top-right",
           autoClose: 2000,
           hideProgressBar: false,
@@ -122,7 +156,7 @@ const Navbar = () => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      toast.error("Invalid Credential! Please Try Again", {
+      toast.error("Login failed. Please try again", {
         position: "top-right",
         autoClose: 2000,
         hideProgressBar: false,
@@ -249,13 +283,19 @@ const Navbar = () => {
             <h2 className="text-xl font-semibold mb-4">Login</h2>
 
             {/* Phone Number Input */}
-            <input
-              type="text"
-              placeholder="Enter Phone Number"
-              value={phoneNumber}
-              onChange={handlePhoneNumberChange}
-              className="w-full p-2 border border-gray-300 rounded mb-3"
-            />
+            <div className="mb-3">
+              <input
+                type="text"
+                placeholder="Enter 10-digit Phone Number"
+                value={phoneNumber}
+                onChange={handlePhoneNumberChange}
+                maxLength="10"
+                className="w-full p-2 border border-gray-300 rounded"
+              />
+              {phoneError && (
+                <p className="text-red-500 text-sm mt-1">{phoneError}</p>
+              )}
+            </div>
 
             {/* Conditional Fields */}
             {userType === "admin" && (
@@ -282,7 +322,12 @@ const Navbar = () => {
             {userType && (
               <button
                 onClick={handleLogin}
-                className="w-full bg-orange-400 hover:bg-orange-500 text-white py-2 rounded mb-3"
+                disabled={!!phoneError}
+                className={`w-full py-2 rounded mb-3 ${
+                  phoneError
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-orange-400 hover:bg-orange-500 text-white"
+                }`}
               >
                 Login
               </button>
