@@ -78,7 +78,8 @@ const Invoice = () => {
       });
       setLateFees(0);
 
-      fetchLastPaidMonth(student.id, student.phone_number);
+      // Check for invoice history, if none exists use student's month
+      fetchLastPaidMonth(student.id, student.phone_number, student.month);
 
     }
   };
@@ -106,8 +107,8 @@ const Invoice = () => {
 
   const grandTotal = studentDetails.busFee * months + lateFees;
 
-  const fetchLastPaidMonth = async (studentId, mobile) => {
-    // console.log("Fetching last paid month for student:", studentId, "with mobile:", mobile);
+  const fetchLastPaidMonth = async (studentId, mobile, studentMonth) => {
+    console.log("Fetching last paid month for student:", studentId, "with mobile:", mobile);
     try {
       const response = await fetch(
         `${config.apiUrl}/get-invoice/?id=${studentId}&mobile_no=${mobile}`,
@@ -120,17 +121,55 @@ const Invoice = () => {
         }
       );
       const data = await response.json();
-      // console.log("Last Paid Month Data:", data);
+      console.log("API Response Data:", data);
   
-      if (data?.next_date) {
-        const lastPaid = new Date(data.next_date); 
-        // console.log("Last Paid Month:", lastPaid);
-        lastPaid.setMonth(lastPaid.getMonth());
-        const nextMonth = lastPaid.toISOString().slice(0, 7); // format "YYYY-MM"
+      // Check if there's actual invoice/payment history
+      // Based on your API response structure, check for next_date array
+      if (data?.next_date && Array.isArray(data.next_date) && data.next_date.length > 0) {
+        // Use the first element from next_date array
+        const nextDateStr = data.next_date[0];
+        const nextDate = new Date(nextDateStr);
+        const nextMonth = nextDate.toISOString().slice(0, 7); // format "YYYY-MM"
+        console.log("Setting start month from next_date:", nextMonth);
         setStartMonth(nextMonth);
+      } 
+      // If no next_date but there's start_month array in response
+      else if (data?.start_month && Array.isArray(data.start_month) && data.start_month.length > 0) {
+        const startMonthStr = data.start_month[0];
+        const startDate = new Date(startMonthStr);
+        const startMonthFormatted = startDate.toISOString().slice(0, 7);
+        console.log("Setting start month from API start_month:", startMonthFormatted);
+        setStartMonth(startMonthFormatted);
+      }
+      // If no payment history, use the student's month field
+      else if (studentMonth) {
+        const studentDate = new Date(studentMonth);
+        const studentMonthFormatted = studentDate.toISOString().slice(0, 7); // format "YYYY-MM"
+        console.log("Setting start month from student month:", studentMonthFormatted);
+        setStartMonth(studentMonthFormatted);
+      }
+      // Fallback to current month if nothing is available
+      else {
+        const currentDate = new Date();
+        const currentMonth = currentDate.toISOString().slice(0, 7);
+        console.log("Setting start month to current month:", currentMonth);
+        setStartMonth(currentMonth);
       }
     } catch (error) {
       console.error("Error fetching last paid month:", error);
+      // If API call fails, use student's month as fallback
+      if (studentMonth) {
+        const studentDate = new Date(studentMonth);
+        const studentMonthFormatted = studentDate.toISOString().slice(0, 7);
+        console.log("Error fallback - using student month:", studentMonthFormatted);
+        setStartMonth(studentMonthFormatted);
+      } else {
+        // Ultimate fallback to current month
+        const currentDate = new Date();
+        const currentMonth = currentDate.toISOString().slice(0, 7);
+        console.log("Error fallback - using current month:", currentMonth);
+        setStartMonth(currentMonth);
+      }
     }
   };
   
@@ -201,7 +240,7 @@ const formatEndDate = (ym) => {
       const data = await postRes.json();
   
       if (!postRes.ok) {
-        throw new Error(postData.message || "Failed to generate invoice.");
+        throw new Error(data.message || "Failed to generate invoice.");
       }
   
   
@@ -312,28 +351,68 @@ doc.line(15, y + 10, 195, y + 10); // From x=15 to x=195 at y+10
       // Save PDF
       doc.save(`Invoice_${data.name}_${data.start_month}.pdf`);
   
+      // Store invoice data for WhatsApp sharing before clearing form
+      setLastInvoiceData({
+        name: studentDetails.name,
+        fatherName: studentDetails.fatherName,
+        phone: studentDetails.phone,
+        routeName: studentDetails.routeName,
+        driverName: studentDetails.driverName,
+        startMonth: startMonth,
+        endMonth: endMonth,
+        totalFees: (studentDetails.busFee * months).toFixed(2),
+        lateFees: lateFees,
+        grandTotal: grandTotal.toFixed(2),
+        paymentMethod: paymentMethod
+      });
+
       setInvoiceId(data.id);
       setIsModalOpen(true);
+
+      // Clear all form data after successful invoice generation
+      setSelectedStudent("");
+      setStudentDetails({
+        name: "",
+        parentName: "",
+        mobile: "",
+        route: "",
+        driverName: "",
+        busFee: 0,
+        lateFees: 0,
+      });
+      setStartMonth("");
+      setEndMonth("");
+      setMonths(0);
+      setLateFees(0);
+      setPaymentMethod("Cash");
     } catch (error) {
       console.error("Invoice generation failed:", error);
       alert("Failed to generate invoice. Please try again.");
     }
   };
   
+  // Store the invoice data before clearing form for WhatsApp sharing
+  const [lastInvoiceData, setLastInvoiceData] = useState(null);
+
   const handleWhatsAppShare = () => {
-    const message = `📜 *CAPITAL BUS SERVICE*\n*Invoice*\n------------------\n👨‍🎓 *Student:* ${studentDetails.name}
-  👪 *Parent:* ${studentDetails.fatherName}
-  📞 *Mobile:* ${studentDetails.phone}
-  🚌 *Route:* ${studentDetails.routeName}
-  👷 *Driver:* ${studentDetails.driverName}
-  📅 *Duration:* ${startMonth} to ${endMonth}
-  💰 *Fees:* ₹${(studentDetails.busFee * months).toFixed(2)}
-  ⚠️ *Late Fees:* ₹${lateFees}
-  💵 *Grand Total:* ₹${grandTotal.toFixed(2)}
-  💳 *Payment Mode:* ${paymentMethod}
+    if (!lastInvoiceData) {
+      alert("No invoice data available for sharing");
+      return;
+    }
+
+    const message = `📜 *CAPITAL BUS SERVICE*\n*Invoice*\n------------------\n👨‍🎓 *Student:* ${lastInvoiceData.name}
+  👪 *Parent:* ${lastInvoiceData.fatherName}
+  📞 *Mobile:* ${lastInvoiceData.phone}
+  🚌 *Route:* ${lastInvoiceData.routeName}
+  👷 *Driver:* ${lastInvoiceData.driverName}
+  📅 *Duration:* ${lastInvoiceData.startMonth} to ${lastInvoiceData.endMonth}
+  💰 *Fees:* ₹${lastInvoiceData.totalFees}
+  ⚠️ *Late Fees:* ₹${lastInvoiceData.lateFees}
+  💵 *Grand Total:* ₹${lastInvoiceData.grandTotal}
+  💳 *Payment Mode:* ${lastInvoiceData.paymentMethod}
   *Thanks For Choosing Us!!*`;
   
-    const whatsappURL = `https://wa.me/+91${studentDetails.phone}?text=${encodeURIComponent(message)}`;
+    const whatsappURL = `https://wa.me/+91${lastInvoiceData.phone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappURL, "_blank");
   };
   
@@ -355,7 +434,7 @@ doc.line(15, y + 10, 195, y + 10); // From x=15 to x=195 at y+10
                   <option value="">Select</option>
                   {students.map((student) => (
                     <option key={student.id} value={student.id}>
-                      {student.name} - {student.class}
+                      {student.name} - {student.student_class}{student.student_section}
                     </option>
                   ))}
                 </select>
@@ -375,7 +454,7 @@ doc.line(15, y + 10, 195, y + 10); // From x=15 to x=195 at y+10
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <div>
                   <label className="block text-gray-700 font-medium">Start Month</label>
-                  <input type="month" value={startMonth} readOnly onChange={(e) => setStartMonth(e.target.value)} className="border p-2 rounded w-full" />
+                  <input type="month" value={startMonth} onChange={(e) => setStartMonth(e.target.value)} className="border p-2 rounded w-full" />
                 </div>
                 <div>
   <label className="block text-gray-700 font-medium">End Month</label>
