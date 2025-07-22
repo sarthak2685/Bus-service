@@ -132,7 +132,7 @@ const DashboardHome = () => {
         setIsSending(true);
 
         try {
-            const adminPhone = "+918981516960"; // Admin phone number
+            const adminPhone = "+919155286099"; // Admin phone number
 
             const emergencyMessage = `🚨 EMERGENCY ALERT 🚨
             
