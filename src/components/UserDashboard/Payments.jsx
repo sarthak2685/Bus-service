@@ -10,6 +10,7 @@ import {
     MdFileDownload,
     MdCurrencyRupee,
     MdClose,
+    MdInfo
 } from "react-icons/md";
 import config from "../Config";
 import axios from "axios";
@@ -244,85 +245,106 @@ const Payments = () => {
         }
     };
 
-    const fetchInvoice = async () => {
-        try {
-            const storedUser = JSON.parse(localStorage.getItem("user"));
-            const user = storedUser?.data?.user_data;
-            const id = user?.id;
-            const mobile_no = user?.phone_number;
+ const fetchInvoice = async () => {
+    try {
+        const storedUser = JSON.parse(localStorage.getItem("user"));
+        const user = storedUser?.data?.user_data;
+        const id = user?.id;
+        const mobile_no = user?.phone_number;
 
-            if (!id || !mobile_no) return;
+        if (!id || !mobile_no) return;
 
-            const response = await fetch(
-                `${config.apiUrl}/get-invoice/?id=${id}&mobile_no=${mobile_no}`,
-                {
-                    headers: {
-                        Authorization: `Token ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-
-            if (!response.ok) throw new Error("Failed to fetch invoice");
-
-            const result = await response.json();
-            const student = result?.data?.[0];
-            
-            // Format last payment date
-            if (result.last_payment_date) {
-                const dateObj = new Date(result.last_payment_date);
-                const day = String(dateObj.getDate()).padStart(2, '0');
-                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                const year = dateObj.getFullYear();
-                setLastPayment(`${day}/${month}/${year}` || null);
+        const response = await fetch(
+            `${config.apiUrl}/get-invoice/?id=${id}&mobile_no=${mobile_no}`,
+            {
+                headers: {
+                    Authorization: `Token ${token}`,
+                    "Content-Type": "application/json",
+                },
             }
+        );
 
-            // Format next payment date and set dates
+        if (!response.ok) throw new Error("Failed to fetch invoice");
+
+        const result = await response.json();
+        const student = result?.data?.[0];
+        
+        // Format last payment date
+        if (result.last_payment_date) {
+            const dateObj = new Date(result.last_payment_date);
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const year = dateObj.getFullYear();
+            setLastPayment(`${day}/${month}/${year}` || null);
+        }
+
+        // Format next payment date
+        if (result.next_date) {
+            const dateObj = new Date(result.next_date);
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const year = dateObj.getFullYear();
+            setNextDate(`${day}/${month}/${year}` || null);
+        }
+
+        // Set initial dates based on payment history
+        let initialFromDate, initialToDate;
+        
+        if (result.last_payment && result.last_payment.length > 0) {
+            // If payment history exists, use next_date for calculation
             if (result.next_date) {
                 const dateObj = new Date(result.next_date);
-                const day = String(dateObj.getDate()).padStart(2, '0');
-                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                const year = dateObj.getFullYear();
-                setNextDate(`${day}/${month}/${year}` || null);
-                
-                // Set fromDate to the 1st day of next payment month
-                const initialFromDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), 1);
-                setFromDate(initialFromDate);
-                
-                // Set toDate to the last day of the same month
-                const initialToDate = new Date(dateObj.getFullYear(), dateObj.getMonth() + 1, 0);
-                setToDate(initialToDate);
-                
-                // Calculate months and amount
-                const months = calculateMonthDiff(initialFromDate, initialToDate);
-                setTotalMonths(months);
+                initialFromDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), 1);
+                initialToDate = new Date(dateObj.getFullYear(), dateObj.getMonth() + 1, 0);
             }
-
-            // Set payment history
-            if (result.last_payment && result.last_payment.length > 0) {
-                setPaymentHistory(result.last_payment);
+        } else {
+            // If no payment history and student has month field, use that
+            if (student?.month) {
+                const monthObj = new Date(student.month);
+                initialFromDate = new Date(monthObj.getFullYear(), monthObj.getMonth(), 1);
+                initialToDate = new Date(monthObj.getFullYear(), monthObj.getMonth() + 1, 0);
+            } else {
+                // Fallback to current month
+                const now = new Date();
+                initialFromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                initialToDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
             }
-
-            // Set fee and form data
-            const busFee = parseInt(result.bus_fee) || parseInt(user?.driver?.route?.amount) || 0;
-            setMonthlyFee(busFee);
-
-            if (student) {
-                setFormData((prev) => ({
-                    ...prev,
-                    name: student.name || "",
-                    class: student.student_class || "",
-                    section: student.student_section || "",
-                    phone: student.phone_number || "",
-                    fatherName: student.fathers_name || "",
-                    route: student?.driver?.route?.name || "",
-                    amount: calculateAmount(fromDate, toDate, busFee),
-                }));
-            }
-        } catch (err) {
-            console.error("Error fetching invoice:", err);
         }
-    };
+
+        if (initialFromDate && initialToDate) {
+            setFromDate(initialFromDate);
+            setToDate(initialToDate);
+            
+            // Calculate months and amount
+            const months = calculateMonthDiff(initialFromDate, initialToDate);
+            setTotalMonths(months);
+        }
+
+        // Set payment history
+        if (result.last_payment && result.last_payment.length > 0) {
+            setPaymentHistory(result.last_payment);
+        }
+
+        // Set fee and form data
+        const busFee = parseInt(result.bus_fee) || parseInt(user?.driver?.route?.amount) || 0;
+        setMonthlyFee(busFee);
+
+        if (student) {
+            setFormData((prev) => ({
+                ...prev,
+                name: student.name || "",
+                class: student.student_class || "",
+                section: student.student_section || "",
+                phone: student.phone_number || "",
+                fatherName: student.fathers_name || "",
+                route: student?.driver?.route?.name || "",
+                amount: calculateAmount(initialFromDate || fromDate, initialToDate || toDate, busFee),
+            }));
+        }
+    } catch (err) {
+        console.error("Error fetching invoice:", err);
+    }
+};
 
     useEffect(() => {
         const loadUserData = () => {
@@ -709,133 +731,145 @@ const Payments = () => {
                 </div>
             </div>
 
-            {/* Payment Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm transition-opacity duration-300 z-50">
-                    <div className="bg-white p-4 md:p-6 rounded-lg shadow-2xl md:min-w-[500px] max-h-[80vh] border border-gray-200 transform scale-100 overflow-y-auto">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold text-gray-900">
-                                Payment Details
-                            </h2>
-                            <MdClose
-                                className="text-[#FF6F00] text-2xl font-bold cursor-pointer hover:text-[#FFD166] transition-colors duration-200"
-                                onClick={() => {
-                                    setIsModalOpen(false);
-                                    setPaymentError(null);
-                                }}
-                            />
-                        </div>
-                        {paymentError && (
-                            <div className="mb-4 p-3 bg-red-100 border-l-4 border-red-500 text-red-700">
-                                <p>{paymentError}</p>
-                            </div>
-                        )}
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <h3 className="text-lg font-semibold text-gray-800">
-                                User Details
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {Object.entries(formData).map(([key, value]) =>
-                                    key !== "amount" ? (
-                                        <div key={key} className="space-y-1">
-                                            <label className="block text-gray-700 capitalize font-medium text-sm">
-                                                {key.replace(/([A-Z])/g, " $1")}
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name={key}
-                                                value={value}
-                                                readOnly
-                                                className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#FF6F00] focus:border-transparent transition-all duration-200"
-                                            />
-                                        </div>
-                                    ) : null
-                                )}
-                            </div>
-
-                            <h3 className="text-lg font-semibold text-gray-800">
-                                Account Details
-                            </h3>
-                            <div className="space-y-4">
-                                <label className="block text-gray-700 capitalize font-medium text-sm">
-                                    Payment period:
-                                </label>
-                                <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
-                                    <div className="flex flex-col gap-1">
-                                        <label className="block text-gray-600 text-sm">
-                                            From
-                                        </label>
-                                        <DatePicker
-                                            selected={fromDate}
-                                            onChange={() => {}} // Disabled
-                                            dateFormat="MMM yyyy"
-                                            showMonthYearPicker
-                                            className="w-full p-2 border rounded-lg bg-gray-50 focus:border-[#FF6F00] focus:ring-[#FF6F00] cursor-not-allowed"
-                                            readOnly
-                                        />
-                                    </div>
-                                    <div className="flex flex-col gap-1">
-                                        <label className="block text-gray-600 text-sm">
-                                            To
-                                        </label>
-                                        <DatePicker
-                                            selected={toDate}
-                                            onChange={handleToDateChange}
-                                            dateFormat="MMM yyyy"
-                                            showMonthYearPicker
-                                            minDate={fromDate}
-                                            className="w-full p-2 border rounded-lg bg-gray-50 focus:border-[#FF6F00] focus:ring-[#FF6F00]"
-                                        />
-                                    </div>
+                               {/* Payment Modal */}
+                    {isModalOpen && (
+                        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm transition-opacity duration-300 z-50">
+                            <div className="bg-white p-4 md:p-6 rounded-lg shadow-2xl md:min-w-[500px] max-h-[80vh] border border-gray-200 transform scale-100 overflow-y-auto">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-xl font-bold text-gray-900">
+                                        Payment Details
+                                    </h2>
+                                    <MdClose
+                                        className="text-[#FF6F00] text-2xl font-bold cursor-pointer hover:text-[#FFD166] transition-colors duration-200"
+                                        onClick={() => {
+                                            setIsModalOpen(false);
+                                            setPaymentError(null);
+                                        }}
+                                    />
                                 </div>
-                                <p className="text-sm text-gray-500">
-                                    Total Months: <strong>{totalMonths}</strong>
-                                </p>
-                                <p className="text-gray-900 font-semibold text-lg">
-                                    Total Amount: ₹{formData.amount}
-                                </p>
-                            </div>
-
-                            <button
-                                type="submit"
-                                className="w-full p-3 bg-[#FF6F00] text-black font-semibold rounded-lg flex items-center justify-center gap-2 hover:bg-[#FFD166] hover:text-black disabled:opacity-50 transition-colors duration-200"
-                                disabled={loading}
-                            >
-                                {loading ? (
-                                    <>
-                                        <svg
-                                            className="animate-spin -ml-1 mr-2 h-5 w-5 text-black"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <circle
-                                                className="opacity-25"
-                                                cx="12"
-                                                cy="12"
-                                                r="10"
-                                                stroke="currentColor"
-                                                strokeWidth="4"
-                                            ></circle>
-                                            <path
-                                                className="opacity-75"
-                                                fill="currentColor"
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                            ></path>
-                                        </svg>
-                                        Processing...
-                                    </>
-                                ) : (
-                                    <>
-                                        <MdCurrencyRupee className="text-xl my-1" />
-                                        Pay Now
-                                    </>
+                                {paymentError && (
+                                    <div className="mb-4 p-3 bg-red-100 border-l-4 border-red-500 text-red-700">
+                                        <p>{paymentError}</p>
+                                    </div>
                                 )}
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            )}
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <h3 className="text-lg font-semibold text-gray-800">
+                                        User Details
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {Object.entries(formData).map(([key, value]) =>
+                                            key !== "amount" ? (
+                                                <div key={key} className="space-y-1">
+                                                    <label className="block text-gray-700 capitalize font-medium text-sm">
+                                                        {key.replace(/([A-Z])/g, " $1")}
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        name={key}
+                                                        value={value}
+                                                        readOnly
+                                                        className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#FF6F00] focus:border-transparent transition-all duration-200"
+                                                    />
+                                                </div>
+                                            ) : null
+                                        )}
+                                    </div>
+
+                                    <h3 className="text-lg font-semibold text-gray-800">
+                                        Account Details
+                                    </h3>
+                                    <div className="space-y-4">
+                                        {/* Always visible note section */}
+                                        <div className="bg-blue-50 border-l-4 border-blue-400 p-3 text-sm text-blue-700 flex items-start gap-2">
+                                            <MdInfo className="text-blue-500 text-lg flex-shrink-0" />
+                                            <div>
+                                                <p className="font-medium">Payment Period Selection</p>
+                                                <p>Please adjust the <strong>"To" date</strong> to select the month(s) you want to pay for.</p>
+                                                <p>The amount will be calculated automatically based on your selection.</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <label className="block text-gray-700 capitalize font-medium text-sm">
+                                            Payment period:
+                                        </label>
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
+                                            <div className="flex flex-col gap-1">
+                                                <label className="block text-gray-600 text-sm">
+                                                    From
+                                                </label>
+                                                <DatePicker
+                                                    selected={fromDate}
+                                                    onChange={() => {}} // Disabled
+                                                    dateFormat="MMM yyyy"
+                                                    showMonthYearPicker
+                                                    className="w-full p-2 border rounded-lg bg-gray-50 focus:border-[#FF6F00] focus:ring-[#FF6F00] cursor-not-allowed"
+                                                    readOnly
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <label className="block text-gray-600 text-sm">
+                                                    To
+                                                </label>
+                                                <DatePicker
+                                                    selected={toDate}
+                                                    onChange={handleToDateChange}
+                                                    dateFormat="MMM yyyy"
+                                                    showMonthYearPicker
+                                                    minDate={fromDate}
+                                                    className="w-full p-2 border rounded-lg bg-gray-50 focus:border-[#FF6F00] focus:ring-[#FF6F00]"
+                                                />
+                                            </div>
+                                        </div>
+                                        <p className="text-sm text-gray-500">
+                                            Total Months: <strong>{totalMonths}</strong>
+                                        </p>
+                                        <p className="text-gray-900 font-semibold text-lg">
+                                            Total Amount: ₹{formData.amount}
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        className="w-full p-3 bg-[#FF6F00] text-black font-semibold rounded-lg flex items-center justify-center gap-2 hover:bg-[#FFD166] hover:text-black disabled:opacity-50 transition-colors duration-200"
+                                        disabled={loading}
+                                    >
+                                        {loading ? (
+                                            <>
+                                                <svg
+                                                    className="animate-spin -ml-1 mr-2 h-5 w-5 text-black"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <circle
+                                                        className="opacity-25"
+                                                        cx="12"
+                                                        cy="12"
+                                                        r="10"
+                                                        stroke="currentColor"
+                                                        strokeWidth="4"
+                                                    ></circle>
+                                                    <path
+                                                        className="opacity-75"
+                                                        fill="currentColor"
+                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                    ></path>
+                                                </svg>
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <MdCurrencyRupee className="text-xl my-1" />
+                                                Pay Now
+                                            </>
+                                        )}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
         </>
     );
 };

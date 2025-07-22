@@ -109,30 +109,37 @@ const Fee = () => {
       let monthPaid = "-";
       
       if (paidPeriods.length > 0) {
+    if (paidPeriods.length === 1) {
+        // If there's only one period, display it as-is
+        monthPaid = paidPeriods[0];
+    } else {
+        // For multiple periods, create a range
         const firstPeriod = extractMonthYear(paidPeriods[0]);
         const lastPeriod = extractMonthYear(paidPeriods[paidPeriods.length - 1]);
-        
-        if (firstPeriod === lastPeriod) {
-          monthPaid = firstPeriod;
-        } else {
-          monthPaid = `${firstPeriod} - ${lastPeriod}`;
-        }
-      }
+        monthPaid = `${firstPeriod} – ${lastPeriod}`;
+    }
+}
       
       // Format the due periods similarly
       const duePeriods = student.due_periods || [];
       let monthDues = "-";
       
       if (duePeriods.length > 0) {
+    if (duePeriods.length === 1) {
+        // If only one period exists, display it exactly as it is
+        monthDues = duePeriods[0];
+    } else {
+        // For multiple periods, extract and combine first and last
         const firstDuePeriod = extractMonthYear(duePeriods[0]);
         const lastDuePeriod = extractMonthYear(duePeriods[duePeriods.length - 1]);
         
         if (firstDuePeriod === lastDuePeriod) {
-          monthDues = firstDuePeriod;
+            monthDues = firstDuePeriod;
         } else {
-          monthDues = `${firstDuePeriod} - ${lastDuePeriod}`;
+            monthDues = `${firstDuePeriod} – ${lastDuePeriod}`; // Using en dash (–) for consistency
         }
-      }
+    }
+}
       
       // Use total_paid directly from the API response
       const amountPaid = student.total_paid ? `Rs. ${student.total_paid}` : "-";
