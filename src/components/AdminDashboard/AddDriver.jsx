@@ -169,20 +169,28 @@ const AddDriver = () => {
     }
   };
 
-  // Function to get route name by ID
+  // Function to get route name by ID with null checking
   const getRouteName = (routeId) => {
+    if (!routeId) return "No Route Assigned";
     const route = routes.find((route) => route.id === routeId);
     return route ? route.name : "Unknown Route";
   };
 
+  // Function to get route amount by ID with null checking
+  const getRouteAmount = (routeId) => {
+    if (!routeId) return null;
+    const route = routes.find((route) => route.id === routeId);
+    return route ? route.amount : null;
+  };
+
   const filteredDrivers = drivers.filter(
     (driver) =>
-      driver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      driver.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       getRouteName(driver.route)
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      driver.contact.includes(searchTerm) ||
-      driver.vehicle_number.toLowerCase().includes(searchTerm.toLowerCase())
+      driver.contact?.includes(searchTerm) ||
+      driver.vehicle_number?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Pagination Logic
@@ -358,54 +366,67 @@ const AddDriver = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedDrivers.map((driver) => (
-                      <tr
-                        key={driver.id}
-                        className="text-center hover:bg-gray-50 text-xs md:text-sm"
-                      >
-                        <td className="border p-1.5 md:p-2">{driver.name}</td>
-                        <td className="border p-1.5 md:p-2">
-                          <div className="flex flex-col">
-                            <span>{driver.route.name}</span>
-                            {driver.route.amount && (
-                              <span className="text-xxs md:text-xs text-gray-500">
-                                ₹{driver.route.amount}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="border p-1.5 md:p-2">{driver.contact}</td>
-                        <td className="border p-1.5 md:p-2">{driver.vehicle_number}</td>
-                        <td className="border p-1.5 md:p-2">
-                          <button
-                            onClick={() => handleDelete(driver.id)}
-                            className="text-red-500 hover:text-red-700"
+                    {paginatedDrivers.length > 0 ? (
+                      paginatedDrivers.map((driver) => {
+                        const routeAmount = getRouteAmount(driver.route);
+                        return (
+                          <tr
+                            key={driver.id}
+                            className="text-center hover:bg-gray-50 text-xs md:text-sm"
                           >
-                            <FiTrash2 className="text-xs md:text-sm mx-auto" />
-                          </button>
+                            <td className="border p-1.5 md:p-2">{driver.name || "N/A"}</td>
+                            <td className="border p-1.5 md:p-2">
+                              <div className="flex flex-col">
+                                <span>{getRouteName(driver.route)}</span>
+                                {routeAmount && (
+                                  <span className="text-xxs md:text-xs text-gray-500">
+                                    ₹{routeAmount}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="border p-1.5 md:p-2">{driver.contact || "N/A"}</td>
+                            <td className="border p-1.5 md:p-2">{driver.vehicle_number || "N/A"}</td>
+                            <td className="border p-1.5 md:p-2">
+                              <button
+                                onClick={() => handleDelete(driver.id)}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                <FiTrash2 className="text-xs md:text-sm mx-auto" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="border p-3 text-center text-xs md:text-sm">
+                          No drivers found
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
               
               {/* Pagination */}
-              <div className="flex justify-center mt-3 space-x-1">
-                {[...Array(totalPages)].map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`px-2 py-1 rounded text-xxs md:text-xs ${
-                      currentPage === i + 1
-                        ? "bg-orange-400 text-white"
-                        : "bg-gray-200"
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-3 space-x-1">
+                  {[...Array(totalPages)].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`px-2 py-1 rounded text-xxs md:text-xs ${
+                        currentPage === i + 1
+                          ? "bg-orange-400 text-white"
+                          : "bg-gray-200"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </div>
