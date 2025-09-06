@@ -260,6 +260,7 @@ const AddUser = () => {
 
       // Optional: Reset form after successful submission
       resetForm();
+      fetchData();
     } catch (error) {
       // Handle submission error
       console.error("Error registering student:", error);
