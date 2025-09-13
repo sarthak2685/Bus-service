@@ -171,10 +171,11 @@ const AddDriver = () => {
 
   // Function to get route name by ID with null checking
   const getRouteName = (routeId) => {
-    if (!routeId) return "No Route Assigned";
-    const route = routes.find((route) => route.id === routeId);
-    return route ? route.name : "Unknown Route";
-  };
+  if (!routeId) return "No Route Assigned";
+  const route = routes.find((route) => route.id === routeId);
+  return route ? route.name : "Unknown Route";
+};
+
 
   // Function to get route amount by ID with null checking
   const getRouteAmount = (routeId) => {
@@ -377,7 +378,7 @@ const AddDriver = () => {
                             <td className="border p-1.5 md:p-2">{driver.name || "N/A"}</td>
                             <td className="border p-1.5 md:p-2">
                               <div className="flex flex-col">
-                                <span>{getRouteName(driver.route)}</span>
+                                <span>{getRouteName(driver.route?.id)}</span>
                                 {routeAmount && (
                                   <span className="text-xxs md:text-xs text-gray-500">
                                     ₹{routeAmount}
