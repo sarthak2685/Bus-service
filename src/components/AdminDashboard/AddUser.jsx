@@ -45,7 +45,7 @@ const AddUser = () => {
     fathers_name: "",
     contact_number: "",
     bus_arrival_time: "",
-    month: "", // New field for joining month
+    month: "",
   });
   
   // State for month-year picker
@@ -77,76 +77,74 @@ const AddUser = () => {
     startIndex + studentsPerPage
   );
 
+  // Fetch data function
+  const fetchData = async () => {
+    try {
+      // Fetch Students
+      const studentsResponse = await fetch(`${config.apiUrl}/students/`, {
+        method: "GET",
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      // Fetch Drivers
+      const driversResponse = await fetch(`${config.apiUrl}/drivers/`, {
+        method: "GET",
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      // Fetch Routes
+      const routesResponse = await fetch(`${config.apiUrl}/route/`, {
+        method: "GET",
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!studentsResponse.ok || !driversResponse.ok || !routesResponse.ok) {
+        throw new Error("Failed to fetch data");
+      }
+
+      const studentsData = await studentsResponse.json();
+      const driversData = await driversResponse.json();
+      const routesData = await routesResponse.json();
+
+      // Transform student data to match the previous structure
+      const transformedStudents = studentsData.map((student) => ({
+        id: student.id,
+        name: student.name,
+        fatherName: student.fathers_name,
+        class: student.student_class,
+        section: student.student_section,
+        phone: student.phone_number,
+        emergency: student.contact_number,
+        arrivalTime: student.bus_arrival_time,
+        joiningMonth: student.month,
+        driverName: student.driver ? student.driver.name : "N/A",
+        amount: student.driver?.route?.amount || "N/A",
+        route: student.driver?.route?.name || "N/A",
+        driverContact: student.driver ? student.driver.contact : "N/A",
+        vehicleNumber: student.driver ? student.driver.vehicle_number : "N/A",
+      }));
+
+      setStudents(transformedStudents);
+      setDrivers(driversData);
+      setRoutes(routesData);
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
   // Fetch students, drivers, and routes data
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch Students
-        const studentsResponse = await fetch(`${config.apiUrl}/students/`, {
-          method: "GET",
-          headers: {
-            Authorization: `Token ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        // Fetch Drivers
-        const driversResponse = await fetch(`${config.apiUrl}/drivers/`, {
-          method: "GET",
-          headers: {
-            Authorization: `Token ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        // Fetch Routes
-        const routesResponse = await fetch(`${config.apiUrl}/route/`, {
-          method: "GET",
-          headers: {
-            Authorization: `Token ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!studentsResponse.ok || !driversResponse.ok || !routesResponse.ok) {
-          throw new Error("Failed to fetch data");
-        }
-
-        const studentsData = await studentsResponse.json();
-        const driversData = await driversResponse.json();
-        const routesData = await routesResponse.json();
-
-        // Transform student data to match the previous structure
-        const transformedStudents = studentsData.map((student) => ({
-          id: student.id,
-          name: student.name,
-          fatherName: student.fathers_name,
-          class: student.student_class,
-          section: student.student_section,
-          phone: student.phone_number,
-          emergency: student.contact_number,
-          arrivalTime: student.bus_arrival_time,
-          joiningMonth: student.month, // Add joining month to transformed data
-          driverName: student.driver ? student.driver.name : "N/A",
-          amount: student.driver.route.amount,
-          route:
-            student.driver && student.driver.route
-              ? student.driver.route.name
-              : "N/A",
-          driverContact: student.driver ? student.driver.contact : "N/A",
-          vehicleNumber: student.driver ? student.driver.vehicle_number : "N/A",
-        }));
-
-        setStudents(transformedStudents);
-        setDrivers(driversData);
-        setRoutes(routesData);
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
-      }
-    };
-
     if (token) {
       fetchData();
     }
@@ -172,18 +170,6 @@ const AddUser = () => {
       setRouteAmount(assignedRoute ? assignedRoute.amount : "");
 
       setSelectedVehicle(driver.vehicle_number || "");
-
-      // Send driver_id in the payload - add amount to payload
-      const payload = {
-        driver_id: driver.id,
-        driver_name: driverName,
-        contact: driver.contact || "",
-        route_id: assignedRoute ? assignedRoute.id : "",
-        route_amount: assignedRoute ? assignedRoute.amount : "",
-        vehicle_number: driver.vehicle_number || "",
-      };
-
-      sendPayload(payload);
     } else {
       // Reset all fields if no driver is selected
       setSelectedDriver("");
@@ -229,12 +215,7 @@ const AddUser = () => {
     // Prepare complete form data with driver_id
     const submissionData = {
       ...formData,
-      driver_id: drivers.find((d) => d.name === selectedDriver)?.id || null, // Extract driver_id
-      selectedDriver,
-      selectedRoute,
-      driverContact,
-      selectedVehicle,
-      routeAmount,
+      driver_id: drivers.find((d) => d.name === selectedDriver)?.id || null,
     };
 
     try {
@@ -253,12 +234,10 @@ const AddUser = () => {
         throw new Error("Network response was not ok");
       }
 
-      const responseData = await response.json();
-
       // Handle successful submission
       alert("Student registered successfully!");
 
-      // Optional: Reset form after successful submission
+      // Reset form and refresh data
       resetForm();
       fetchData();
     } catch (error) {
@@ -319,9 +298,9 @@ const AddUser = () => {
         throw new Error("Failed to delete student");
       }
 
-      // Refresh the page after deletion
+      // Refresh the data after deletion
       alert("Student deleted successfully!");
-      window.location.reload();
+      fetchData();
     } catch (error) {
       console.error("Error deleting student:", error);
       alert("Failed to delete student. Please try again.");
@@ -421,7 +400,7 @@ const AddUser = () => {
                             onChange={field.onChange || handleInputChange}
                             className="w-full pl-9 pr-3 py-2 text-sm md:text-base rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
                             placeholder={field.placeholder}
-                            required={field.type !== "month"} // Joining month is optional
+                            required={field.type !== "month"}
                           />
                         </div>
                       </div>
@@ -727,9 +706,9 @@ const AddUser = () => {
                         <strong className="text-xs md:text-sm">Phone:</strong> {selectedStudent.phone}
                       </p>
                       <p>
-  <strong className="text-xs md:text-sm">Joining Month:</strong>{" "}
-  {selectedStudent.joiningMonth.substring(0, 10)}
-</p>
+                        <strong className="text-xs md:text-sm">Joining Month:</strong>{" "}
+                        {selectedStudent.joiningMonth ? selectedStudent.joiningMonth.substring(0, 10) : "N/A"}
+                      </p>
                       <p>
                         <strong className="text-xs md:text-sm">Driver Name:</strong>{" "}
                         {selectedStudent.driverName}
