@@ -258,9 +258,9 @@ const formatEndDate = (ym) => {
       y += 7;
       doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
-      doc.text("123 Main Street, City Name, State - 000000", 105, y, { align: "center" });
+      doc.text("New Patliputra, Bihar, Patna-800013", 105, y, { align: "center" });
       y += 5;
-      doc.text("Phone: +91 9876543210 | Email: info@capitalbus.com", 105, y, { align: "center" });
+      doc.text("Phone: +91 74828 68380 | Email: capitalbusserv@gmail.com", 105, y, { align: "center" });
     
       // Separation Line
       y += 7;
